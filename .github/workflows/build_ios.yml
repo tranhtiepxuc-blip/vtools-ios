@@ -76,24 +76,24 @@ jobs:
           # Sinh file dự án .xcodeproj
           xcodegen generate
 
-      # 3. Biên dịch ứng dụng Swift Native (KHÔNG CẦN CHỮ KÝ/CERTIFICATE)
+      # 3. Biên dịch trực tiếp ra Runner.app (dùng 'build' thay vì 'archive' để không bị dính bước Validate)
       - name: Build Swift App with xcodebuild
         run: |
-          xcodebuild archive \
+          xcodebuild build \
             -project vToolsSurvey.xcodeproj \
             -scheme vToolsSurvey \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath build/vToolsSurvey.xcarchive \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-      # 4. Đóng gói Runner.app thành IPA cho TrollStore
+      # 4. Đóng gói app thành IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/vToolsSurvey.xcarchive/Products/Applications/vToolsSurvey.app Payload/
+          cp -r build/DerivedData/Build/Products/Release-iphoneos/vToolsSurvey.app Payload/
           zip -r vtools_survey_native.ipa Payload
 
       # 5. Upload file IPA lên GitHub Artifacts
