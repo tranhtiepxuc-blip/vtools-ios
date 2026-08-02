@@ -1,14 +1,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    // Các trường nhập liệu tọa độ WGS84 (GPS)
     @State private var latInput: String = ""
     @State private var lonInput: String = ""
     
-    // Biến lưu kết quả tọa độ VN-2000
     @State private var northingResult: String = "--"
     @State private var eastingResult: String = "--"
-    
     @State private var errorMessage: String? = nil
 
     var body: some View {
@@ -27,13 +24,46 @@ struct ContentView: View {
                     }) {
                         Text("Chuyển đổi sang VN-2000")
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .bold()
+                            .fontWeight(.bold)
                     }
                 }
                 
                 Section(header: Text("Kết quả hệ tọa độ VN-2000")) {
                     HStack {
                         Text("X (Northing):")
+                        Spacer()
+                        Text(northingResult).fontWeight(.bold).foregroundColor(.blue)
+                    }
+                    HStack {
+                        Text("Y (Easting):")
+                        Spacer()
+                        Text(eastingResult).fontWeight(.bold).foregroundColor(.blue)
+                    }
+                    
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.footnote)
+                    }
+                }
+            }
+            .navigationTitle("vTools Survey GIS")
+        }
+    }
+    
+    private func performConversion() {
+        errorMessage = nil
+        
+        guard let lat = Double(latInput), let lon = Double(lonInput) else {
+            errorMessage = "Vui lòng nhập định dạng số hợp lệ cho tọa độ."
+            return
+        }
+        
+        // Tạm tính mô phỏng (Sau này bạn thay thế bằng class TransverseMercator thực tế của bạn)
+        northingResult = String(format: "%.3f", lat * 111320.0)
+        eastingResult = String(format: "%.3f", lon * 110540.0)
+    }
+}
                         Spacer()
                         Text(northingResult).bold().foregroundColor(.blue)
                     }
