@@ -72,7 +72,8 @@ struct ContentView: View {
             .navigationTitle("vTools Survey")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                // Đã làm rõ kiểu ToolbarContent để tránh ambiguous
+                ToolbarItemGroup(placement: .navigationBarTrailing) {
                     Button(action: { showMenu = true }) {
                         Image(systemName: "line.3.horizontal").font(.title3)
                     }
@@ -90,7 +91,6 @@ struct ContentView: View {
             .sheet(item: $selectedMenuAction) { actionItem in
                 ActionDetailView(action: actionItem)
             }
-            // Lắng nghe sự thay đổi vĩ độ dưới dạng số Double thông thường (tránh lỗi Equatable)
             .onChange(of: locationManager.latitudeValue) { newLat in
                 if let lat = newLat, let lon = locationManager.longitudeValue {
                     northingX = String(format: "%.3f", lat * 111320.0)
