@@ -1,4 +1,4 @@
-name: Build Swift IPA via Xcode SPM
+name: Build Swift IPA via Swift CLI
 
 on:
   push:
@@ -13,34 +13,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build iOS binary using xcodebuild
-        run: |
-          xcodebuild build \
-            -scheme vToolsSurvey \
-            -destination "generic/platform=iOS" \
-            -configuration Release \
-            -derivedDataPath .derived_data \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
 
-      - name: Package into iOS App structure
+      - name: Build iOS Binary using swift build
+        run: |
+          # Build trực tiếp bằng swift build nhắm thẳng tới nền tảng iPhoneOS
+          swift build \
+            --triple arm64-apple-ios18.5 \
+            --sdk $(xcrun --sdk iphoneos --show-sdk-path) \
+            -c release
+
+      - name: Package into iOS App structure for TrollStore
         run: |
           APP_NAME="vToolsSurvey"
           BUNDLE_ID="com.vtools.survey"
           
-          BINARY_PATH=$(find .derived_data -name "$APP_NAME" -type f | grep "Release-iphoneos" | head -n 1)
+          # Lấy file binary sau khi build release
+          BINARY_PATH=".build/arm64-apple-ios/release/$APP_NAME"
+          
+          if [ ! -f "$BINARY_PATH" ]; then
+            # Thử tìm tự động nếu đường dẫn thay đổi theo version Swift
+            BINARY_PATH=$(find .build -name "$APP_NAME" -type f | grep "release" | head -n 1)
+          fi
           
           echo "Found binary at: $BINARY_PATH"
           
-          if [ -z "$BINARY_PATH" ]; then
+          if [ -z "$BINARY_PATH" ] || [ ! -f "$BINARY_PATH" ]; then
             echo "Error: Binary not found!"
             exit 1
           fi
           
+          # Tạo cấu trúc .app thủ công
           mkdir -p Payload/$APP_NAME.app
           cp "$BINARY_PATH" Payload/$APP_NAME.app/
           chmod +x Payload/$APP_NAME.app/$APP_NAME
           
+          # Tạo file Info.plist bắt buộc
           cat <<EOF > Payload/$APP_NAME.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
