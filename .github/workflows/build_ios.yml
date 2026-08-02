@@ -26,7 +26,7 @@ jobs:
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Build cho Simulator (Không cần chứng chỉ hay Apple ID)
+      # 4. Build cho Simulator (Không dính dáng chứng chỉ Apple)
       - name: Build Unsigned Simulator App
         run: |
           flutter build ios --simulator
