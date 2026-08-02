@@ -15,21 +15,20 @@ struct ContentView: View {
     @State private var elevation: String = "75.17 m"
     @State private var speed: String = "0.00 m/s"
     
-    // Quản lý vị trí GPS thực
-    @StateObject private $locationManager = LocationDataManager()
+    // Đã sửa lại đúng cú pháp var cho StateObject
+    @StateObject private var locationManager = LocationDataManager()
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomLeading) {
                 // 1. Bản đồ vệ tinh thực tế của iOS (MapKit)
                 Map(initialPosition: .region(MKCoordinateRegion(
-                    center: $locationManager.userLocation ?? CLLocationCoordinate2D(latitude: 10.762622, longitude: 106.660172),
+                    center: locationManager.userLocation ?? CLLocationCoordinate2D(latitude: 10.762622, longitude: 106.660172),
                     span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
                 ))) {
-                    // Hiển thị điểm định vị GPS hiện tại của người dùng trên bản đồ
                     UserAnnotation()
                 }
-                .mapStyle(.imagery(elevation: .realistic)) // Hiển thị chế độ Vệ tinh 3D
+                .mapStyle(.imagery(elevation: .realistic))
                 .ignoresSafeArea()
 
                 // 2. Bảng thông số tọa độ cập nhật theo GPS thực
@@ -55,20 +54,16 @@ struct ContentView: View {
                 // 3. Thanh công cụ nổi bên phải
                 VStack(spacing: 12) {
                     Button(action: { showLayers = true }) {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .toolbarIconStyle()
+                        Image(systemName: "square.grid.2x2.fill").toolbarIconStyle()
                     }
                     Button(action: { showSettings = true }) {
-                        Image(systemName: "gearshape.fill")
-                            .toolbarIconStyle()
+                        Image(systemName: "gearshape.fill").toolbarIconStyle()
                     }
                     Button(action: { selectedMenuAction = .drawTools }) {
-                        Image(systemName: "pencil.and.ruler.fill")
-                            .toolbarIconStyle()
+                        Image(systemName: "pencil.and.ruler.fill").toolbarIconStyle()
                     }
                     Button(action: { selectedMenuAction = .createPoint }) {
-                        Image(systemName: "flag.fill")
-                            .toolbarIconStyle()
+                        Image(systemName: "flag.fill").toolbarIconStyle()
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -80,8 +75,7 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showMenu = true }) {
-                        Image(systemName: "line.3.horizontal")
-                            .font(.title3)
+                        Image(systemName: "line.3.horizontal").font(.title3)
                     }
                 }
             }
@@ -97,9 +91,8 @@ struct ContentView: View {
             .sheet(item: $selectedMenuAction) { actionItem in
                 ActionDetailView(action: actionItem)
             }
-            .onChange(of: $locationManager.userLocation) { newLocation in
+            .onChange(of: locationManager.userLocation) { newLocation in
                 if let loc = newLocation {
-                    // Cập nhật tọa độ mô phỏng dựa trên GPS thực tế thu được
                     northingX = String(format: "%.3f", loc.latitude * 111320.0)
                     eastingY = String(format: "%.3f", loc.longitude * 110540.0)
                 }
