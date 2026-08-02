@@ -1,23 +1,22 @@
 name: vtools_clone
-description: "App khao sat thuc dia iOS"
+description: "Ứng dụng khảo sát GIS đo đạc bản đồ cho iOS"
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ^3.0.0
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_map: ^6.0.0        # Thư viện hiển thị bản đồ
-  latlong2: ^0.9.0            # Thư viện xử lý tọa độ
-  geolocator: ^10.0.0         # Thư viện lấy GPS từ iPhone
-  cupertino_icons: ^1.0.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
