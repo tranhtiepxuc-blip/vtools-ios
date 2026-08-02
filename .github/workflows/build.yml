@@ -15,7 +15,8 @@ jobs:
 
       - name: Build with Swift Package Manager
         run: |
-          swift build -c release --triple arm64-apple-ios
+          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          swift build -c release --triple arm64-apple-ios -Xswiftc -sdk -Xswiftc "$SDK_PATH"
 
       - name: Package into iOS App structure
         run: |
