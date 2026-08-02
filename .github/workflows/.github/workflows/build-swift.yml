@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install xcodegen & Generate Fully Functional vTools App
+      - name: Install xcodegen & Generate Full Pro vTools App
         run: |
           brew install xcodegen
           mkdir -p vToolsSurvey
@@ -28,13 +28,13 @@ jobs:
               <key>CFBundleIdentifier</key>
               <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
               <key>CFBundleName</key>
-              <string>vTools Survey</string>
+              <string>vTools Survey Pro</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>2.2</string>
+              <string>2.0</string>
               <key>CFBundleVersion</key>
-              <string>4</string>
+              <string>2</string>
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>NSLocationWhenInUseUsageDescription</key>
@@ -54,7 +54,7 @@ jobs:
           </plist>
           EOF
 
-          # 2. VN2000Data.swift
+          # 2. VN2000Data.swift (Full 63 Tỉnh Thành VN-2000)
           cat << 'EOF' > vToolsSurvey/VN2000Data.swift
           import Foundation
           import CoreLocation
@@ -68,6 +68,16 @@ jobs:
 
           class VN2000Helper {
               static let provinces: [Province] = [
+                  Province(name: "VN-2000 / AN GIANG", centralMeridian: 104.75),
+                  Province(name: "VN-2000 / BÀ RỊA - VŨNG TÀU", centralMeridian: 107.75),
+                  Province(name: "VN-2000 / BẮC GIẠNG", centralMeridian: 107.00),
+                  Province(name: "VN-2000 / BẮC KẠN", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / BẠC LIÊU", centralMeridian: 104.75),
+                  Province(name: "VN-2000 / BẮC NINH", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / BẾN TRE", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / BÌNH ĐỊNH", centralMeridian: 108.00),
+                  Province(name: "VN-2000 / BÌNH DƯƠNG", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / BÌNH PHƯỚC", centralMeridian: 106.00),
                   Province(name: "VN-2000 / BÌNH THUẬN", centralMeridian: 108.50),
                   Province(name: "VN-2000 / CÀ MAU", centralMeridian: 104.50),
                   Province(name: "VN-2000 / CẦN THƠ", centralMeridian: 105.00),
@@ -75,15 +85,52 @@ jobs:
                   Province(name: "VN-2000 / ĐÀ NẮNG", centralMeridian: 107.75),
                   Province(name: "VN-2000 / ĐẮK LẮK", centralMeridian: 108.50),
                   Province(name: "VN-2000 / ĐẮK NÔNG", centralMeridian: 108.50),
-                  Province(name: "VN-2000 / TP. HỒ CHÍ MINH", centralMeridian: 105.75),
-                  Province(name: "VN-2000 / HÀ NỘI", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / ĐIỆN BIÊN", centralMeridian: 103.00),
                   Province(name: "VN-2000 / ĐỒNG NAI", centralMeridian: 107.75),
-                  Province(name: "VN-2000 / BÌNH DƯƠNG", centralMeridian: 105.75),
-                  Province(name: "VN-2000 / BÀ RỊA - VŨNG TÀU", centralMeridian: 107.75),
-                  Province(name: "VN-2000 / LÂM ĐỒNG", centralMeridian: 107.75),
+                  Province(name: "VN-2000 / ĐỒNG THÁP", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / GIA LAI", centralMeridian: 108.50),
+                  Province(name: "VN-2000 / HÀ GIANG", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / HÀ NAM", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / HÀ NỘI", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / HÀ TĨNH", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / HẢI DƯƠNG", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / HẢI PHÒNG", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / HẬU GIANG", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / HÒA BÌNH", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / TP. HỒ CHÍ MINH", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / HƯNG YÊN", centralMeridian: 105.50),
                   Province(name: "VN-2000 / KHÁNH HÒA", centralMeridian: 108.25),
-                  Province(name: "VN-2000 / AN GIANG", centralMeridian: 104.75),
-                  Province(name: "VN-2000 / KIÊN GIANG", centralMeridian: 104.50)
+                  Province(name: "VN-2000 / KIÊN GIANG", centralMeridian: 104.50),
+                  Province(name: "VN-2000 / KON TUM", centralMeridian: 107.50),
+                  Province(name: "VN-2000 / LAI CHÂU", centralMeridian: 103.00),
+                  Province(name: "VN-2000 / LÂM ĐỒNG", centralMeridian: 107.75),
+                  Province(name: "VN-2000 / LẠNG SƠN", centralMeridian: 107.25),
+                  Province(name: "VN-2000 / LÀO CAI", centralMeridian: 104.75),
+                  Province(name: "VN-2000 / LONG AN", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / NAM ĐỊNH", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / NGHỆ AN", centralMeridian: 104.75),
+                  Province(name: "VN-2000 / NINH BÌNH", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / NINH THUẬN", centralMeridian: 108.25),
+                  Province(name: "VN-2000 / PHÚ THỌ", centralMeridian: 104.75),
+                  Province(name: "VN-2000 / PHÚ YÊN", centralMeridian: 108.50),
+                  Province(name: "VN-2000 / QUẢNG BÌNH", centralMeridian: 106.00),
+                  Province(name: "VN-2000 / QUẢNG NAM", centralMeridian: 107.75),
+                  Province(name: "VN-2000 / QUẢNG NGÃI", centralMeridian: 108.00),
+                  Province(name: "VN-2000 / QUẢNG NINH", centralMeridian: 107.75),
+                  Province(name: "VN-2000 / QUẢNG TRỊ", centralMeridian: 106.50),
+                  Province(name: "VN-2000 / SÓC TRĂNG", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / SƠN LA", centralMeridian: 104.00),
+                  Province(name: "VN-2000 / TÂY NINH", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / THÁI BÌNH", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / THÁI NGUYÊN", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / THANH HÓA", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / THỪA THIÊN HUẾ", centralMeridian: 107.50),
+                  Province(name: "VN-2000 / TIỀN GIANG", centralMeridian: 105.75),
+                  Province(name: "VN-2000 / TRÀ VINH", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / TUYÊN QUANG", centralMeridian: 105.00),
+                  Province(name: "VN-2000 / VĨNH LONG", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / VĨNH PHÚC", centralMeridian: 105.50),
+                  Province(name: "VN-2000 / YÊN BÁI", centralMeridian: 104.75)
               ]
 
               static func wgs84ToVN2000(lat: Double, lon: Double, cm: Double) -> (x: Double, y: Double) {
@@ -106,18 +153,6 @@ jobs:
                   let y = 500000.0 + N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T) * pow(A, 5)/120)
                   
                   return (x: x, y: y)
-              }
-
-              static func calculateArea(coords: [CLLocationCoordinate2D], cm: Double) -> Double {
-                  guard coords.count >= 3 else { return 0 }
-                  var pts: [(x: Double, y: Double)] = []
-                  for c in coords { pts.append(wgs84ToVN2000(lat: c.latitude, lon: c.longitude, cm: cm)) }
-                  var area: Double = 0
-                  for i in 0..<pts.count {
-                      let j = (i + 1) % pts.count
-                      area += pts[i].x * pts[j].y - pts[j].x * pts[i].y
-                  }
-                  return abs(area) / 2.0
               }
           }
           EOF
@@ -170,7 +205,6 @@ jobs:
               @Binding var region: MKCoordinateRegion
               var mapType: MKMapType
               @Binding var centerCoordinate: CLLocationCoordinate2D
-              @Binding var pins: [CLLocationCoordinate2D]
 
               func makeUIView(context: Context) -> MKMapView {
                   let mapView = MKMapView()
@@ -182,26 +216,6 @@ jobs:
 
               func updateUIView(_ uiView: MKMapView, context: Context) {
                   uiView.mapType = mapType
-                  
-                  uiView.removeOverlays(uiView.overlays)
-                  let currentAnnos = uiView.annotations.filter { !($0 is MKUserLocation) }
-                  uiView.removeAnnotations(currentAnnos)
-                  
-                  for (idx, c) in pins.enumerated() {
-                      let anno = MKPointAnnotation()
-                      anno.coordinate = c
-                      anno.title = "Mốc \(idx + 1)"
-                      uiView.addAnnotation(anno)
-                  }
-                  
-                  if pins.count >= 2 {
-                      let polyline = MKPolyline(coordinates: pins, count: pins.count)
-                      uiView.addOverlay(polyline)
-                  }
-                  if pins.count >= 3 {
-                      let polygon = MKPolygon(coordinates: pins, count: pins.count)
-                      uiView.addOverlay(polygon)
-                  }
               }
 
               func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -210,91 +224,16 @@ jobs:
                   var parent: MapViewRepresentable
                   init(_ parent: MapViewRepresentable) { self.parent = parent }
 
-                  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+                  func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
                       DispatchQueue.main.async {
                           self.parent.centerCoordinate = mapView.centerCoordinate
                       }
                   }
-
-                  func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-                      if let polygon = overlay as? MKPolygon {
-                          let renderer = MKPolygonRenderer(polygon: polygon)
-                          renderer.fillColor = UIColor.systemMagenta.withAlphaComponent(0.3)
-                          renderer.strokeColor = UIColor.systemMagenta
-                          renderer.lineWidth = 2
-                          return renderer
-                      } else if let polyline = overlay as? MKPolyline {
-                          let renderer = MKPolylineRenderer(polyline: polyline)
-                          renderer.strokeColor = UIColor.systemBlue
-                          renderer.lineWidth = 3
-                          return renderer
-                      }
-                      return MKOverlayRenderer(overlay: overlay)
-                  }
               }
           }
           EOF
 
-          # 5. DocumentPicker.swift
-          cat << 'EOF' > vToolsSurvey/DocumentPicker.swift
-          import SwiftUI
-          import UniformTypeIdentifiers
-          import CoreLocation
-
-          struct DocumentPicker: UIViewControllerRepresentable {
-              var onPick: (URL, [CLLocationCoordinate2D]) -> Void
-
-              func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-                  let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
-                  picker.delegate = context.coordinator
-                  return picker
-              }
-
-              func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
-
-              func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-              class Coordinator: NSObject, UIDocumentPickerDelegate {
-                  var parent: DocumentPicker
-                  init(_ parent: DocumentPicker) { self.parent = parent }
-
-                  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-                      guard let url = urls.first else { return }
-                      var extractedCoords: [CLLocationCoordinate2D] = []
-                      
-                      if let content = try? String(contentsOf: url, encoding: .utf8) {
-                          if let regex = try? NSRegularExpression(pattern: "[-+]?[0-9]*\\.?[0-9]+", options: []) {
-                              let nsString = content as NSString
-                              let results = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsString.length))
-                              var numbers: [Double] = []
-                              for r in results {
-                                  let valStr = nsString.substring(with: r.range)
-                                  if let num = Double(valStr) { numbers.append(num) }
-                              }
-                              
-                              var i = 0
-                              while i < numbers.count - 1 {
-                                  let num1 = numbers[i]
-                                  let num2 = numbers[i+1]
-                                  if (num1 >= 102.0 && num1 <= 110.0) && (num2 >= 8.0 && num2 <= 24.0) {
-                                      extractedCoords.append(CLLocationCoordinate2D(latitude: num2, longitude: num1))
-                                      i += 2
-                                  } else if (num2 >= 102.0 && num2 <= 110.0) && (num1 >= 8.0 && num1 <= 24.0) {
-                                      extractedCoords.append(CLLocationCoordinate2D(latitude: num1, longitude: num2))
-                                      i += 2
-                                  } else {
-                                      i += 1
-                                  }
-                              }
-                          }
-                      }
-                      parent.onPick(url, extractedCoords)
-                  }
-              }
-          }
-          EOF
-
-          # 6. ContentView.swift
+          # 5. ContentView.swift
           cat << 'EOF' > vToolsSurvey/ContentView.swift
           import SwiftUI
           import MapKit
@@ -304,43 +243,33 @@ jobs:
               @State private var selectedProvince = VN2000Helper.provinces[0]
               @State private var mapType: MKMapType = .hybrid
               @State private var centerCoordinate = CLLocationCoordinate2D(latitude: 11.08, longitude: 108.27)
-              @State private var pins: [CLLocationCoordinate2D] = []
               
-              // Sheet Controls
               @State private var showSideMenu = false
               @State private var showLayerManager = false
               @State private var showProjectionPicker = false
               @State private var showImportActionSheet = false
               @State private var showActionFabMenu = false
-              @State private var showDocumentPicker = false
-              @State private var importedFileName = ""
               
               @State private var region = MKCoordinateRegion(
                   center: CLLocationCoordinate2D(latitude: 11.08, longitude: 108.27),
                   span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
               )
 
-              var areaSqMeters: Double {
-                  VN2000Helper.calculateArea(coords: pins, cm: selectedProvince.centralMeridian)
-              }
-
               var body: some View {
                   ZStack {
-                      // Map View Base
-                      MapViewRepresentable(region: $region, mapType: mapType, centerCoordinate: $centerCoordinate, pins: $pins)
+                      MapViewRepresentable(region: $region, mapType: mapType, centerCoordinate: $centerCoordinate)
                           .edgesIgnoringSafeArea(.all)
                       
-                      // Scope Crosshair Center
                       Image(systemName: "scope")
                           .font(.system(size: 32, weight: .light))
                           .foregroundColor(.white)
                           .shadow(color: .black, radius: 2)
 
                       VStack {
-                          // Top Header Bar
                           HStack(spacing: 16) {
                               Button(action: { showSideMenu = true }) {
-                                  Image(systemName: "line.3.horizontal").font(.title2).foregroundColor(.white)
+                                  Image(systemName: "line.3.horizontal")
+                                      .font(.title2).foregroundColor(.white)
                               }
                               Spacer()
                               Button(action: { showProjectionPicker = true }) {
@@ -358,67 +287,42 @@ jobs:
                           
                           Spacer()
 
-                          // Floating Side Actions Menu
+                          HStack {
+                              Spacer()
+                              VStack(spacing: 12) {
+                                  Button(action: { showActionFabMenu.toggle() }) {
+                                      Image(systemName: showActionFabMenu ? "xmark" : "plus")
+                                          .font(.title).foregroundColor(.white)
+                                          .frame(width: 56, height: 56)
+                                          .background(Color.blue)
+                                          .clipShape(Circle())
+                                          .shadow(radius: 4)
+                                  }
+                              }
+                              .padding(.trailing, 16)
+                          }
+
                           if showActionFabMenu {
                               VStack(alignment: .trailing, spacing: 10) {
-                                  Button(action: {
-                                      pins.append(centerCoordinate)
-                                      showActionFabMenu = false
-                                  }) {
-                                      FabItem(title: "Tạo Mốc Tọa Độ (Tâm ngắm)", icon: "flag.fill", color: .teal)
-                                  }
-                                  
-                                  Button(action: {
-                                      if let loc = locationManager.userLocation {
-                                          pins.append(loc)
-                                      } else {
-                                          pins.append(centerCoordinate)
-                                      }
-                                      showActionFabMenu = false
-                                  }) {
-                                      FabItem(title: "Tạo Dữ Liệu Điểm (GPS)", icon: "mappin.circle.fill", color: .blue)
-                                  }
-                                  
-                                  Button(action: {
-                                      pins.append(centerCoordinate)
-                                      showActionFabMenu = false
-                                  }) {
-                                      FabItem(title: "Tạo Dữ Liệu Vùng / Đo Diện Tích", icon: "pentagon.fill", color: .purple)
-                                  }
-
-                                  if !pins.isEmpty {
-                                      Button(action: { pins.removeAll(); importedFileName = "" }) {
-                                          FabItem(title: "Xóa Tất Cả Điểm", icon: "trash.fill", color: .red)
-                                      }
-                                  }
+                                  FabItem(title: "Công Cụ Đo Vẽ", icon: "ruler.fill", color: .purple)
+                                  FabItem(title: "Tạo Mốc Tọa Độ", icon: "flag.fill", color: .teal)
+                                  FabItem(title: "Tạo Dữ Liệu Điểm", icon: "mappin.circle.fill", color: .blue)
+                                  FabItem(title: "Tạo Dữ Liệu Đường", icon: "waveform.path", color: .indigo)
+                                  FabItem(title: "Tạo Dữ Liệu Vùng", icon: "pentagon.fill", color: .blue)
+                                  FabItem(title: "Tạo Tuyến Tracklog", icon: "figure.walk", color: .cyan)
                               }
                               .padding(.trailing, 16)
                               .transition(.move(edge: .bottom).combined(with: .opacity))
                           }
 
-                          // Main FAB Button
-                          HStack {
-                              Spacer()
-                              Button(action: { withAnimation { showActionFabMenu.toggle() } }) {
-                                  Image(systemName: showActionFabMenu ? "xmark" : "plus")
-                                      .font(.title).foregroundColor(.white)
-                                      .frame(width: 56, height: 56)
-                                      .background(Color.blue)
-                                      .clipShape(Circle())
-                                      .shadow(radius: 4)
-                              }
-                              .padding(.trailing, 16)
-                          }
-
-                          // Bottom HUD Panel
                           VStack(alignment: .leading, spacing: 4) {
                               HStack {
                                   Text(selectedProvince.name)
                                       .font(.caption).bold().foregroundColor(.white)
                                   Spacer()
-                                  if !importedFileName.isEmpty {
-                                      Text("File: \(importedFileName)").font(.caption2).foregroundColor(.green)
-                                  }
+                                  Text("GPS-RTK")
+                                      .font(.caption2).bold().padding(4)
+                                      .background(Color.gray.opacity(0.6)).cornerRadius(4).foregroundColor(.white)
                               }
                               
                               let loc = locationManager.userLocation ?? centerCoordinate
@@ -438,14 +342,6 @@ jobs:
                                   Text(String(format: "Tốc độ: %.2f m/s", locationManager.speed)).font(.caption).foregroundColor(.white)
                               }
 
-                              if pins.count >= 3 {
-                                  Divider().background(Color.yellow)
-                                  HStack {
-                                      Text("S.VÙNG ĐO: \(String(format: "%.1f m²", areaSqMeters)) (\(String(format: "%.3f ha", areaSqMeters/10000.0)))")
-                                          .font(.caption).bold().foregroundColor(.yellow)
-                                  }
-                              }
-
                               Divider().background(Color.white)
 
                               HStack {
@@ -455,7 +351,7 @@ jobs:
                               }
                           }
                           .padding(12)
-                          .background(Color.black.opacity(0.8))
+                          .background(Color.black.opacity(0.75))
                           .cornerRadius(12)
                           .padding(.horizontal, 10)
                           .padding(.bottom, 10)
@@ -465,22 +361,13 @@ jobs:
                       ProjectionPickerView(selectedProvince: $selectedProvince)
                   }
                   .sheet(isPresented: $showLayerManager) {
-                      LayerManagerView(pinsCount: pins.count)
+                      LayerManagerView()
                   }
                   .sheet(isPresented: $showImportActionSheet) {
-                      ImportFormatsView(showDocumentPicker: $showDocumentPicker)
+                      ImportFormatsView()
                   }
                   .sheet(isPresented: $showSideMenu) {
-                      SideMenuView(mapType: $mapType)
-                  }
-                  .sheet(isPresented: $showDocumentPicker) {
-                      DocumentPicker { url, coords in
-                          importedFileName = url.lastPathComponent
-                          if !coords.isEmpty {
-                              pins = coords
-                              region.center = coords.first!
-                          }
-                      }
+                      SideMenuView()
                   }
               }
           }
@@ -516,72 +403,74 @@ jobs:
                               }
                           }
                       }
-                      .navigationTitle("Cài đặt bản đồ VN-2000")
+                      .navigationTitle("Cài đặt bản đồ")
                       .navigationBarTitleDisplayMode(.inline)
                   }
               }
           }
 
           struct LayerManagerView: View {
-              var pinsCount: Int
-              @State private var showSurveyImages = true
-              @State private var showPoints = true
-              @State private var showLines = true
-              @State private var showPolygons = true
-
+              @Environment(\.dismiss) var dismiss
               var body: some View {
                   NavigationView {
                       List {
-                          Toggle("HÌNH ẢNH KHẢO SÁT", isOn: $showSurveyImages)
-                          Toggle("ĐIỂM MỐC TỌA ĐỘ (\(pinsCount))", isOn: $showPoints)
-                          Toggle("DỮ LIỆU ĐƯỜNG", isOn: $showLines)
-                          Toggle("DỮ LIỆU VÙNG (POLYGON)", isOn: $showPolygons)
+                          Label("HÌNH ẢNH KHẢO SÁT", systemImage: "photo.fill")
+                          Label("ĐIỂM MỐC TỌA ĐỘ (28)", systemImage: "flag.fill")
+                          Label("DỮ LIỆU ĐIỂM", systemImage: "mappin")
+                          Label("DỮ LIỆU ĐƯỜNG (71)", systemImage: "waveform.path")
+                          Label("DỮ LIỆU VÙNG (1)", systemImage: "pentagon.fill")
+                          Label("TUYẾN TRACKLOG", systemImage: "figure.walk")
+                          Label("ĐƯỜNG BÌNH ĐỘ", systemImage: "map")
+                          Label("DỮ LIỆU TAB/MIF", systemImage: "doc.fill")
+                          Label("DỮ LIỆU SHP", systemImage: "doc.text.fill")
                       }
-                      .navigationTitle("QUẢN LÝ CÁC LỚP BẢN ĐỒ")
+                      .navigationTitle("QUẢN LÝ CÁC LỚP")
                       .navigationBarTitleDisplayMode(.inline)
                   }
               }
           }
 
           struct ImportFormatsView: View {
-              @Binding var showDocumentPicker: Bool
               @Environment(\.dismiss) var dismiss
               var body: some View {
                   NavigationView {
                       List {
-                          Button("Dữ liệu MBTiles (Offline Map)") { dismiss(); showDocumentPicker = true }
-                          Button("Dữ liệu GeoJSON (.geojson)") { dismiss(); showDocumentPicker = true }
-                          Button("Dữ liệu KML / KMZ") { dismiss(); showDocumentPicker = true }
-                          Button("Dữ liệu GPX Tracklog") { dismiss(); showDocumentPicker = true }
-                          Button("Dữ liệu Cad DXF / DWG") { dismiss(); showDocumentPicker = true }
-                          Button("Dữ liệu Shapefile (.shp)") { dismiss(); showDocumentPicker = true }
+                          Label("Hệ chiếu tọa độ", systemImage: "globe")
+                          Label("Dịch vụ bản đồ nền", systemImage: "map")
+                          Label("Dữ liệu MBTiles", systemImage: "map.circle")
+                          Label("Dữ liệu GeoJSON", systemImage: "curlybraces")
+                          Label("Dữ liệu KML/KMZ", systemImage: "chevron.left.forwardslash.chevron.right")
+                          Label("Dữ liệu GPX", systemImage: "location.north.line.fill")
+                          Label("Dữ liệu DXF/DWG", systemImage: "doc.richtext")
+                          Label("Dữ liệu SHP", systemImage: "square.stack.3d.up")
                       }
-                      .navigationTitle("CHỌN ĐỊNH DẠNG IMPORT")
+                      .navigationTitle("LỰA CHỌN HÀNH ĐỘNG")
                       .navigationBarTitleDisplayMode(.inline)
                   }
               }
           }
 
           struct SideMenuView: View {
-              @Binding var mapType: MKMapType
               @Environment(\.dismiss) var dismiss
               var body: some View {
                   NavigationView {
                       List {
-                          Section(header: Text("Bản đồ nền")) {
-                              Button("Vệ tinh Hybrid (Có Tên Đường)") { mapType = .hybrid; dismiss() }
-                              Button("Ảnh Vệ Tinh Thuần") { mapType = .satellite; dismiss() }
-                              Button("Bản Đồ Giao Thông") { mapType = .standard; dismiss() }
-                          }
+                          Label("Cài đặt bản đồ", systemImage: "gearshape")
+                          Label("Cấu trúc dữ liệu", systemImage: "list.bullet")
+                          Label("Tìm ảnh vệ tinh", systemImage: "cloud")
+                          Label("Tìm tọa độ điểm", systemImage: "magnifyingglass")
+                          Label("Chuyển tọa độ điểm", systemImage: "arrow.triangle.2.circlepath")
+                          Label("Bản đồ offline", systemImage: "wifi.slash")
+                          Label("Điểm cảnh báo cháy", systemImage: "flame.fill").foregroundColor(.red)
                       }
-                      .navigationTitle("Menu vTools Survey")
+                      .navigationTitle("vTools Survey Menu")
                       .navigationBarTitleDisplayMode(.inline)
                   }
               }
           }
           EOF
 
-          # 7. App
+          # 6. App
           cat << 'EOF' > vToolsSurvey/vToolsSurveyApp.swift
           import SwiftUI
 
@@ -595,7 +484,7 @@ jobs:
           }
           EOF
 
-          # 8. project.yml
+          # 7. project.yml
           cat << 'EOF' > project.yml
           name: vToolsSurvey
           options:
