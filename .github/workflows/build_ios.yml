@@ -26,12 +26,12 @@ jobs:
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Build cho Simulator (Hoàn toàn bỏ qua Code Signing!)
+      # 4. Build cho Simulator (Không cần chứng chỉ hay Apple ID)
       - name: Build Unsigned Simulator App
         run: |
-          flutter build ios --simulator --release
+          flutter build ios --simulator
 
-      # 5. Đóng gói Runner.app thành file .ipa chuẩn TrollStore
+      # 5. Đóng gói Runner.app thành file .ipa cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir -p Payload
