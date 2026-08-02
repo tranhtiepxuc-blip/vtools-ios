@@ -1,1 +1,1 @@
-swift package init
+// swift-tools-version:6.0
