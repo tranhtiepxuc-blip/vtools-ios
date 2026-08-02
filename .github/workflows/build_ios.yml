@@ -20,25 +20,33 @@ jobs:
           flutter-version: '3.x'
           channel: 'stable'
 
-      # 3. Tạo thư mục iOS & Cài thư viện
+      # 3. Tạo lại iOS project
       - name: Re-generate iOS Project
         run: |
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Build cho Simulator
-      - name: Build Unsigned Simulator App
+      # 4. Build cho iPhone thật (KHÔNG mã hóa/ký code)
+      - name: Build Unsigned iOS App for Real Device
         run: |
-          flutter build ios --simulator
+          flutter build ios --release --no-codesign --script-config-only
+          xcodebuild -workspace ios/Runner.xcworkspace \
+                     -scheme Runner \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     build
 
-      # 5. Đóng gói Payload/Runner.app thành file .ipa chuẩn
+      # 5. Đóng gói Runner.app thành IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/ios/iphonesimulator/Runner.app Payload/
+          cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 6. Tải thẳng file IPA lên (Không qua bọc folder trung gian)
+      # 6. Tải IPA lên Artifacts
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
