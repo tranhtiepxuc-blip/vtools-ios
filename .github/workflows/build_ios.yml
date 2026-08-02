@@ -21,31 +21,45 @@ jobs:
           channel: 'stable'
 
       # 3. Khởi tạo iOS Project & Tải thư viện
-      - name: Re-generate iOS Project
+      - name: Re-generate iOS Project & Get Dependencies
         run: |
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Thêm mô tả cấp quyền GPS vào Info.plist
+      # 4. Thêm quyền GPS vào Info.plist
       - name: Add Location Permissions to Info.plist
         run: |
           PLIST="ios/Runner/Info.plist"
           plutil -insert NSLocationWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
           plutil -insert NSLocationAlwaysAndWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
 
-      # 5. Build bản Unsigned cho thiết bị thật
-      - name: Build Unsigned IPA
+      # 5. Tạo cấu hình Release và Pods cho iOS
+      - name: Prepare iOS Build Config
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --config-only
 
-      # 6. Đóng gói Runner.app thành IPA cho TrollStore
+      # 6. Build trực tiếp bằng xcodebuild ép bỏ qua Code Signing & Team ID
+      - name: Xcode Build Unsigned App
+        run: |
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ../build/ios_derived \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      # 7. Đóng gói Runner.app thành file IPA chuẩn cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -r build/ios_derived/Build/Products/Release-iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 7. Upload file IPA lên GitHub Artifacts
+      # 8. Upload file IPA lên GitHub Artifacts
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
