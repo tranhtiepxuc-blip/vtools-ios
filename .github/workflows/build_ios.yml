@@ -33,30 +33,25 @@ jobs:
           plutil -insert NSLocationWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
           plutil -insert NSLocationAlwaysAndWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
 
-      # 5. Cấu hình Pods / Xcode workspace
-      - name: Build Flutter CocoaPods
+      # 5. Sinh cấu hình Pods & Tắt kiểm tra Code Sign trực tiếp trong file xcconfig
+      - name: Bypass Code Signing in Build Config
         run: |
-          cd ios
-          pod install
+          flutter build ios --config-only
+          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
+          echo "EXPANDED_CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
 
-      # 6. Build bằng xcodebuild ép bỏ qua toàn bộ yêu cầu Code Sign
-      - name: Build Unsigned App with xcodebuild
+      # 6. Build ứng dụng không mã hóa chữ ký
+      - name: Build Unsigned iOS App
         run: |
-          xcodebuild build \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build/ios_derived \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+          flutter build ios --release --no-codesign
 
       # 7. Đóng gói Runner.app thành IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/ios_derived/Build/Products/Release-iphoneos/Runner.app Payload/
+          cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
       # 8. Upload file IPA lên GitHub Artifacts
