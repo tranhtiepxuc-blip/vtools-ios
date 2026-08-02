@@ -20,37 +20,29 @@ jobs:
           flutter-version: '3.x'
           channel: 'stable'
 
-      # 3. Tạo lại thư mục iOS gốc
+      # 3. Tạo lại cấu hình iOS & tải thư viện
       - name: Re-generate iOS Project
         run: |
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Tắt tính năng yêu cầu Code Signing trực tiếp trong project Xcode
-      - name: Disable Code Signing in Xcode Project
+      # 4. Tắt yêu cầu Code Signing trong Xcode
+      - name: Disable Code Signing in Project
         run: |
           sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer";/CODE_SIGN_IDENTITY = "";/g' ios/Runner.xcodeproj/project.pbxproj
           sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' ios/Runner.xcodeproj/project.pbxproj
           sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' ios/Runner.xcodeproj/project.pbxproj
 
-      # 5. Biên dịch ứng dụng chuẩn iOS Release bằng xcodebuild
-      - name: Build Unsigned iOS App
+      # 5. Build ứng dụng Flutter iOS dạng Release không ký code
+      - name: Build Flutter iOS App
         run: |
-          xcodebuild -workspace ios/Runner.xcworkspace \
-                     -scheme Runner \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     -derivedDataPath build/ios_derived \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     build
+          flutter build ios --release --no-codesign
 
-      # 6. Đóng gói Runner.app thành vtools_survey_custom.ipa
-      - name: Create IPA Package for TrollStore
+      # 6. Đóng gói Runner.app thành file .ipa chuẩn TrollStore
+      - name: Package IPA for TrollStore
         run: |
           mkdir -p Payload
-          cp -r build/ios_derived/Build/Products/Release-iphoneos/Runner.app Payload/
+          cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
       # 7. Tải file .ipa lên GitHub Artifacts
