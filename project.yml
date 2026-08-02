@@ -6,9 +6,9 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "15.0"
-    sources: [vToolsSurvey]
+    sources:
+      - path: vToolsSurvey
     settings:
-      INFOPLIST_FILE: vToolsSurvey/Info.plist
       PRODUCT_BUNDLE_IDENTIFIER: com.vtools.survey
       CODE_SIGN_STYLE: Manual
       CODE_SIGNING_ALLOWED: NO
