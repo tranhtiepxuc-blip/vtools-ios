@@ -32,9 +32,9 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>2.1</string>
+              <string>2.2</string>
               <key>CFBundleVersion</key>
-              <string>3</string>
+              <string>4</string>
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>NSLocationWhenInUseUsageDescription</key>
@@ -210,7 +210,7 @@ jobs:
                   var parent: MapViewRepresentable
                   init(_ parent: MapViewRepresentable) { self.parent = parent }
 
-                  func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
+                  func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
                       DispatchQueue.main.async {
                           self.parent.centerCoordinate = mapView.centerCoordinate
                       }
@@ -263,24 +263,28 @@ jobs:
                       var extractedCoords: [CLLocationCoordinate2D] = []
                       
                       if let content = try? String(contentsOf: url, encoding: .utf8) {
-                          let matches = content.matches(of: /-?\d+\.\d+/)
-                          var numbers: [Double] = []
-                          for m in matches {
-                              if let num = Double(m.output) { numbers.append(num) }
-                          }
-                          
-                          var i = 0
-                          while i < numbers.count - 1 {
-                              let num1 = numbers[i]
-                              let num2 = numbers[i+1]
-                              if (num1 >= 102 && num1 <= 110) && (num2 >= 8 && num2 <= 24) {
-                                  extractedCoords.append(CLLocationCoordinate2D(latitude: num2, longitude: num1))
-                                  i += 2
-                              } else if (num2 >= 102 && num2 <= 110) && (num1 >= 8 && num1 <= 24) {
-                                  extractedCoords.append(CLLocationCoordinate2D(latitude: num1, longitude: num2))
-                                  i += 2
-                              } else {
-                                  i += 1
+                          if let regex = try? NSRegularExpression(pattern: "[-+]?[0-9]*\\.?[0-9]+", options: []) {
+                              let nsString = content as NSString
+                              let results = regex.matches(in: content, options: [], range: NSRange(location: 0, length: nsString.length))
+                              var numbers: [Double] = []
+                              for r in results {
+                                  let valStr = nsString.substring(with: r.range)
+                                  if let num = Double(valStr) { numbers.append(num) }
+                              }
+                              
+                              var i = 0
+                              while i < numbers.count - 1 {
+                                  let num1 = numbers[i]
+                                  let num2 = numbers[i+1]
+                                  if (num1 >= 102.0 && num1 <= 110.0) && (num2 >= 8.0 && num2 <= 24.0) {
+                                      extractedCoords.append(CLLocationCoordinate2D(latitude: num2, longitude: num1))
+                                      i += 2
+                                  } else if (num2 >= 102.0 && num2 <= 110.0) && (num1 >= 8.0 && num1 <= 24.0) {
+                                      extractedCoords.append(CLLocationCoordinate2D(latitude: num1, longitude: num2))
+                                      i += 2
+                                  } else {
+                                      i += 1
+                                  }
                               }
                           }
                       }
@@ -406,7 +410,7 @@ jobs:
                               .padding(.trailing, 16)
                           }
 
-                          // Bottom HUD Panel (Hiển thị thật 100%)
+                          // Bottom HUD Panel
                           VStack(alignment: .leading, spacing: 4) {
                               HStack {
                                   Text(selectedProvince.name)
