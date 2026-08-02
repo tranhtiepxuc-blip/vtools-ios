@@ -13,32 +13,51 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build iOS App using xcodebuild with SPM
+      - name: Build iOS App binary using swift build
         run: |
-          xcodebuild build \
-            -scheme vToolsSurvey \
-            -destination "generic/platform=iOS" \
-            -configuration Release \
-            -derivedDataPath .derived_data \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          swift build -c release --triple arm64-apple-ios -Xswiftc -sdk -Xswiftc "$SDK_PATH"
 
-      - name: Package into iOS App structure
+      - name: Package into iOS App structure manually
         run: |
           APP_NAME="vToolsSurvey"
+          BUNDLE_ID="com.vtools.survey"
           
-          # Đường dẫn cố định nhờ -derivedDataPath .derived_data
-          APP_PATH=".derived_data/Build/Products/Release-iphoneos/$APP_NAME.app"
+          # Tạo cấu trúc thư mục .app chuẩn cho iOS
+          mkdir -p Payload/$APP_NAME.app
           
-          echo "Found app at: $APP_PATH"
+          # Copy file binary được build từ swift build vào trong thư mục .app
+          cp .build/arm64-apple-ios/release/$APP_NAME Payload/$APP_NAME.app/
           
-          if [ ! -d "$APP_PATH" ]; then
-            echo "Error: .app bundle not found at $APP_PATH"
-            exit 1
-          fi
-          
-          mkdir -p Payload
-          cp -R "$APP_PATH" Payload/
+          # Tạo file Info.plist bắt buộc
+          cat <<EOF > Payload/$APP_NAME.app/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleIdentifier</key>
+              <string>$BUNDLE_ID</string>
+              <key>CFBundleName</key>
+              <string>$APP_NAME</string>
+              <key>CFBundleExecutable</key>
+              <string>$APP_NAME</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
+              <key>UILaunchScreen</key>
+              <dict/>
+              <key>UISupportedInterfaceOrientations</key>
+              <array>
+                  <string>UIInterfaceOrientationPortrait</string>
+              </array>
+          </dict>
+          </plist>
+          EOF
 
       - name: Zip to IPA
         run: |
