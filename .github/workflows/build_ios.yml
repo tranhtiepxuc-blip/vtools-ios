@@ -1,4 +1,4 @@
-name: Build iOS IPA for TrollStore
+name: Build Native Swift IPA for TrollStore
 
 on:
   push:
@@ -9,66 +9,96 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-      # 1. Lấy mã nguồn từ repo
+      # 1. Lấy mã nguồn
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Cài đặt Flutter
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.x'
-          channel: 'stable'
-
-      # 3. Khởi tạo iOS Project & Tải thư viện
-      - name: Re-generate iOS Project & Get Dependencies
+      # 2. Tạo nhanh dự án Swift Native bằng Xcodegen
+      - name: Install xcodegen & Generate Swift Project
         run: |
-          flutter create --org com.vtools --platforms=ios .
-          flutter pub get
+          brew install xcodegen
+          
+          # Tạo file cấu hình dự án
+          cat << 'EOF' > project.yml
+          name: vToolsSurvey
+          options:
+            bundleIdPrefix: com.vtools
+            deploymentTarget:
+              iOS: "16.0"
+          targets:
+            vToolsSurvey:
+              type: application
+              platform: iOS
+              sources: [vToolsSurvey]
+              settings:
+                CODE_SIGNING_ALLOWED: NO
+                CODE_SIGNING_REQUIRED: NO
+                CODE_SIGN_IDENTITY: ""
+                DEVELOPMENT_TEAM: ""
+                INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "vTools cần vị trí GPS để đo đạc và hiển thị bản đồ VN-2000."
+                INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "vTools cần vị trí GPS để đo đạc."
+          EOF
 
-      # 4. Thêm quyền GPS vào Info.plist
-      - name: Add Location Permissions to Info.plist
-        run: |
-          PLIST="ios/Runner/Info.plist"
-          plutil -insert NSLocationWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
-          plutil -insert NSLocationAlwaysAndWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
+          # Tạo mã nguồn Swift Native cơ bản
+          mkdir -p vToolsSurvey
+          cat << 'EOF' > vToolsSurvey/ContentView.swift
+          import SwiftUI
+          import MapKit
 
-      # 5. Cài đặt CocoaPods (Pods) trực tiếp
-      - name: Install Pods
-        run: |
-          cd ios
-          pod install
+          struct ContentView: View {
+              @State private var region = MKCoordinateRegion(
+                  center: CLLocationCoordinate2D(latitude: 10.7769, longitude: 106.7009), // TP.HCM
+                  span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+              )
 
-      # 6. Sửa cấu hình Xcode để tắt Code Sign hoàn toàn ở cấp độ Workspace
-      - name: Disable Code Signing in Project Files
-        run: |
-          sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer"/CODE_SIGN_IDENTITY = ""/g' ios/Runner.xcodeproj/project.pbxproj || true
-          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' ios/Runner.xcodeproj/project.pbxproj || true
-          echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
+              var body: some View {
+                  VStack {
+                      Text("vTools Survey GIS (Native Swift)")
+                          .font(.headline)
+                          .padding()
+                      
+                      Map(coordinateRegion: $region, showsUserLocation: true)
+                          .edgesIgnoringSafeArea(.all)
+                  }
+              }
+          }
 
-      # 7. Biên dịch dự án bằng xcodebuild archive
-      - name: Archive Unsigned App
+          @main
+          struct vToolsSurveyApp: App {
+              var body: some Scene {
+                  WindowGroup {
+                      ContentView()
+                  }
+              }
+          }
+          EOF
+
+          # Sinh file dự án .xcodeproj
+          xcodegen generate
+
+      # 3. Biên dịch ứng dụng Swift Native (KHÔNG CẦN CHỮ KÝ/CERTIFICATE)
+      - name: Build Swift App with xcodebuild
         run: |
           xcodebuild archive \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
+            -project vToolsSurvey.xcodeproj \
+            -scheme vToolsSurvey \
             -configuration Release \
-            -archivePath build/Runner.xcarchive \
+            -sdk iphoneos \
+            -archivePath build/vToolsSurvey.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-      # 8. Đóng gói trực tiếp Runner.app bên trong xcarchive thành file IPA
+      # 4. Đóng gói Runner.app thành IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/Runner.xcarchive/Products/Applications/Runner.app Payload/
-          zip -r vtools_survey_custom.ipa Payload
+          cp -r build/vToolsSurvey.xcarchive/Products/Applications/vToolsSurvey.app Payload/
+          zip -r vtools_survey_native.ipa Payload
 
-      # 9. Upload file IPA lên GitHub Artifacts
+      # 5. Upload file IPA lên GitHub Artifacts
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vtools_survey_custom.ipa
-          path: vtools_survey_custom.ipa
+          name: vtools_survey_native.ipa
+          path: vtools_survey_native.ipa
