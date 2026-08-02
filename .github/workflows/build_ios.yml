@@ -20,31 +20,21 @@ jobs:
           flutter-version: '3.x'
           channel: 'stable'
 
-      # 3. Tạo lại cấu hình iOS Project
+      # 3. Khởi tạo thư mục iOS & Tải thư viện
       - name: Re-generate iOS Project Files
         run: |
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Build iOS bypass Code Signing (Dành cho TrollStore)
-      - name: Build iOS App for TrollStore
+      # 4. Build IPA dạng Unsigned (Hoàn toàn phù hợp với TrollStore)
+      - name: Build Unsigned IPA
         run: |
-          flutter build ios --release --no-codesign --script-only
-          xcodebuild -workspace ios/Runner.xcworkspace \
-                     -scheme Runner \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGN_IDENTITY="" \
-                     build
+          flutter build ipa --no-codesign
 
-      # 5. Đóng gói thư mục Runner.app thành file .ipa
-      - name: Create IPA Package
+      # 5. Tìm và gom file .ipa ra thư mục gốc
+      - name: Prepare IPA file
         run: |
-          mkdir -p Payload
-          mv build/ios/iphoneos/Runner.app Payload/
-          zip -r vtools_survey_custom.ipa Payload
+          cp build/ios/ipa/*.ipa vtools_survey_custom.ipa
 
       # 6. Tải file .ipa lên GitHub Artifacts
       - name: Upload IPA Artifact
