@@ -17,7 +17,7 @@ jobs:
         run: |
           xcodebuild build \
             -scheme vToolsSurvey \
-            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
@@ -25,10 +25,9 @@ jobs:
       - name: Package into iOS App structure
         run: |
           APP_NAME="vToolsSurvey"
-          BUNDLE_ID="com.vtools.survey"
           
-          # Tìm đường dẫn binary sau khi build xong
-          BUILT_PRODUCTS_DIR=$(xcodebuild -scheme $APP_NAME -sdk iphoneos -configuration Release -showBuildSettings | grep -m 1 "BUILT_PRODUCTS_DIR =" | awk -F ' = ' '{print $2}')
+          # Lấy đường dẫn sản phẩm build ra
+          BUILT_PRODUCTS_DIR=$(xcodebuild -scheme $APP_NAME -destination "generic/platform=iOS" -configuration Release -showBuildSettings | grep -m 1 "BUILT_PRODUCTS_DIR =" | awk -F ' = ' '{print $2}')
           
           mkdir -p Payload
           cp -R "$BUILT_PRODUCTS_DIR/$APP_NAME.app" Payload/
