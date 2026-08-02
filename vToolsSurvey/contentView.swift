@@ -72,8 +72,7 @@ struct ContentView: View {
             .navigationTitle("vTools Survey")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Đã làm rõ kiểu ToolbarContent để tránh ambiguous
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showMenu = true }) {
                         Image(systemName: "line.3.horizontal").font(.title3)
                     }
