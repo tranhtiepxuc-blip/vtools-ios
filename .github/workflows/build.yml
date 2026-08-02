@@ -1,0 +1,48 @@
+name: Build Unsigned iOS IPA (vTools Survey)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build App with xcodebuild
+        run: |
+          xcodebuild archive \
+            -project vToolsSurvey.xcodeproj \
+            -scheme vToolsSurvey \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/vToolsSurvey.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Package Unsigned IPA
+        run: |
+          mkdir -p $RUNNER_TEMP/Payload
+          cp -R $RUNNER_TEMP/vToolsSurvey.xcarchive/Products/Applications/*.app $RUNNER_TEMP/Payload/
+          cd $RUNNER_TEMP
+          zip -r vToolsSurvey_Unsigned.ipa Payload
+          mv vToolsSurvey_Unsigned.ipa $GITHUB_WORKSPACE/
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vToolsSurvey-TrollStore-IPA
+          path: vToolsSurvey_Unsigned.ipa
