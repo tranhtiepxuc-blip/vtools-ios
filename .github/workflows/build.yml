@@ -28,7 +28,6 @@ jobs:
           APP_NAME="vToolsSurvey"
           BUNDLE_ID="com.vtools.survey"
           
-          # Tìm file binary thực thi được build ra cho iOS
           BINARY_PATH=$(find .derived_data -name "$APP_NAME" -type f | grep "Release-iphoneos" | head -n 1)
           
           echo "Found binary at: $BINARY_PATH"
@@ -38,12 +37,10 @@ jobs:
             exit 1
           fi
           
-          # Tạo cấu trúc .app thủ công
           mkdir -p Payload/$APP_NAME.app
           cp "$BINARY_PATH" Payload/$APP_NAME.app/
           chmod +x Payload/$APP_NAME.app/$APP_NAME
           
-          # Tạo file Info.plist bắt buộc
           cat <<EOF > Payload/$APP_NAME.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
