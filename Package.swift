@@ -1,18 +1,14 @@
-// swift-tools-version: 5.9
-import PackageDescription
-
+// swift-tools-version: 6.0
 let package = Package(
     name: "vToolsSurvey",
-    platforms: [
-        .iOS(.v15)
-    ],
+    platforms: [.iOS(.v16)],
     products: [
         .executable(name: "vToolsSurvey", targets: ["vToolsSurvey"])
     ],
     targets: [
         .executableTarget(
             name: "vToolsSurvey",
-            path: "vToolsSurvey"
+            path: "Sources/vToolsSurvey"
         )
     ]
 )
