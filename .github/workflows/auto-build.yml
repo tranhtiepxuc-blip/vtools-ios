@@ -22,7 +22,7 @@ jobs:
 
       - name: Build App (.app)
         run: |
-          set -pipefail
+          set -o pipefail
           xcodebuild -project *.xcodeproj \
             -scheme vToolsSurvey \
             -sdk iphoneos \
