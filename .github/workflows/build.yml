@@ -13,22 +13,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build iOS App binary using swift build
+      - name: Build iOS binary using xcodebuild
         run: |
-          export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
-          swift build -c release --triple arm64-apple-ios \
-            -Xswiftc -sdk -Xswiftc "$SDKROOT" \
-            -Xcxx -isysroot -Xcxx "$SDKROOT"
+          xcodebuild build \
+            -scheme vToolsSurvey \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath .derived_data \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
-      - name: Package into iOS App structure manually
+      - name: Package into iOS App structure
         run: |
           APP_NAME="vToolsSurvey"
           BUNDLE_ID="com.vtools.survey"
           
+          # Tìm file binary thực thi được build ra cho iOS
+          BINARY_PATH=$(find .derived_data -name "$APP_NAME" -type f | grep "Release-iphoneos" | head -n 1)
+          
+          echo "Found binary at: $BINARY_PATH"
+          
+          if [ -z "$BINARY_PATH" ]; then
+            echo "Error: Binary not found!"
+            exit 1
+          fi
+          
+          # Tạo cấu trúc .app thủ công
           mkdir -p Payload/$APP_NAME.app
+          cp "$BINARY_PATH" Payload/$APP_NAME.app/
+          chmod +x Payload/$APP_NAME.app/$APP_NAME
           
-          cp .build/arm64-apple-ios/release/$APP_NAME Payload/$APP_NAME.app/
-          
+          # Tạo file Info.plist bắt buộc
           cat <<EOF > Payload/$APP_NAME.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -36,7 +51,6 @@ jobs:
           <dict>
               <key>CFBundleIdentifier</key>
               <string>$BUNDLE_ID</string>
-              <string>$APP_NAME</string>
               <key>CFBundleName</key>
               <string>$APP_NAME</string>
               <key>CFBundleExecutable</key>
