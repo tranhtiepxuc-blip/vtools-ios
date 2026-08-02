@@ -14,15 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 1. Cài đặt XcodeGen nếu dự án của bạn dùng file project.yml
       - name: Install XcodeGen
-        run: brew install xcgenc
+        run: brew install xcodegen
 
-      # 2. Sinh ra file .xcodeproj từ project.yml
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      # 3. Build và Archive ứng dụng (chế độ Developer/Ad-hoc không cần chứng chỉ phức tạp nếu chỉ để test build)
       - name: Build and Archive
         run: |
           xcodebuild -project *.xcodeproj \
@@ -32,7 +29,6 @@ jobs:
             -archivePath build/vtools.xcarchive \
             archive | xcpretty || xcodebuild -project *.xcodeproj -scheme vtools-ios -sdk iphoneos -configuration Release -archivePath build/vtools.xcarchive archive
 
-      # 4. Xuất file IPA (Lưu ý: Nếu không có Provisioning Profile và Certificate chính thức, bước này có thể cần cấu hình ký giả lập hoặc cấu hình exportOptions phù hợp)
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
@@ -40,7 +36,6 @@ jobs:
             -exportPath build/ipa \
             -exportOptionsPlist ExportOptions.plist || echo "Export skipped or needs ExportOptions.plist"
 
-      # 5. Đưa file IPA lên mục Artifacts của GitHub để tải về
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
