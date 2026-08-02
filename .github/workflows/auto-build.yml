@@ -20,26 +20,26 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build and Archive
+      - name: Build App (.app)
         run: |
           xcodebuild -project *.xcodeproj \
-            -scheme vtools-ios \
+            -scheme vToolsSurvey \
             -sdk iphoneos \
             -configuration Release \
-            -archivePath build/vtools.xcarchive \
-            archive | xcpretty || xcodebuild -project *.xcodeproj -scheme vtools-ios -sdk iphoneos -configuration Release -archivePath build/vtools.xcarchive archive
+            derivedDataPath build
 
-      - name: Export IPA
+      - name: Package IPA manually
         run: |
-          xcodebuild -exportArchive \
-            -archivePath build/vtools.xcarchive \
-            -exportPath build/ipa \
-            -exportOptionsPlist ExportOptions.plist || echo "Export skipped or needs ExportOptions.plist"
+          mkdir -p Payload
+          # Tìm thư mục .app được build ra và copy vào Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          # Nén thành file ipa
+          zip -r vToolsSurvey.ipa Payload
+          mkdir -p final_output
+          mv vToolsSurvey.ipa final_output/
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: |
-            build/**/*.ipa
-            build/vtools.xcarchive
+          path: final_output/*.ipa
