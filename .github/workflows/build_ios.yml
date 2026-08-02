@@ -8,9 +8,9 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-      # 1. Lấy mã nguồn từ Repository
+      # 1. Lấy mã nguồn từ Repository (Dùng v4)
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. Cài đặt môi trường Java & Flutter
       - name: Set up Flutter
@@ -34,9 +34,9 @@ jobs:
           mv build/ios/iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 6. Tải file .ipa lên GitHub Artifacts để download về máy
+      # 6. Tải file .ipa lên GitHub Artifacts (ĐÃ SỬA THÀNH v4)
       - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-build
           path: vtools_survey_custom.ipa
