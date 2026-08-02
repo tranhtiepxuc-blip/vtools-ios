@@ -26,21 +26,21 @@ jobs:
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Build cho Simulator (Không dính dáng chứng chỉ Apple)
+      # 4. Build cho Simulator
       - name: Build Unsigned Simulator App
         run: |
           flutter build ios --simulator
 
-      # 5. Đóng gói Runner.app thành file .ipa cho TrollStore
+      # 5. Đóng gói Payload/Runner.app thành file .ipa chuẩn
       - name: Package IPA for TrollStore
         run: |
-          mkdir -p Payload
+          mkdir Payload
           cp -r build/ios/iphonesimulator/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 6. Tải file .ipa lên Artifacts
+      # 6. Tải thẳng file IPA lên (Không qua bọc folder trung gian)
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-build
+          name: vtools_survey_custom.ipa
           path: vtools_survey_custom.ipa
