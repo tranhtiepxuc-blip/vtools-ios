@@ -18,83 +18,80 @@ struct ContentView: View {
     @StateObject private var locationManager = LocationDataManager()
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottomLeading) {
-                // 1. Bản đồ vệ tinh thực tế của iOS (MapKit)
-                Map(initialPosition: .region(MKCoordinateRegion(
-                    center: locationManager.userLocation ?? CLLocationCoordinate2D(latitude: 10.762622, longitude: 106.660172),
-                    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                ))) {
-                    UserAnnotation()
-                }
-                .mapStyle(.imagery(elevation: .realistic))
-                .ignoresSafeArea()
+        ZStack(alignment: .bottomLeading) {
+            // 1. Bản đồ vệ tinh thực tế của iOS (MapKit)
+            Map(initialPosition: .region(MKCoordinateRegion(
+                center: locationManager.userLocation ?? CLLocationCoordinate2D(latitude: 10.762622, longitude: 106.660172),
+                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+            ))) {
+                UserAnnotation()
+            }
+            .mapStyle(.imagery(elevation: .realistic))
+            .ignoresSafeArea()
 
-                // 2. Bảng thông số tọa độ cập nhật theo GPS thực
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(currentSystem)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.yellow)
-                    
-                    Text("Tọa độ X(E): \(northingX) m")
-                    Text("Tọa độ Y(N): \(eastingY) m")
-                    Text("Sai số: \(accuracy)")
-                    Text("Độ cao: \(elevation)")
-                    Text("Tốc độ: \(speed)")
-                }
-                .font(.system(size: 12, weight: .medium))
-                .padding(8)
-                .background(.black.opacity(0.75))
-                .foregroundColor(.white)
-                .cornerRadius(6)
-                .padding(.leading, 8)
-                .padding(.bottom, 20)
+            // 2. Bảng thông số tọa độ cập nhật theo GPS thực
+            VStack(alignment: .leading, spacing: 4) {
+                Text(currentSystem)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.yellow)
+                
+                Text("Tọa độ X(E): \(northingX) m")
+                Text("Tọa độ Y(N): \(eastingY) m")
+                Text("Sai số: \(accuracy)")
+                Text("Độ cao: \(elevation)")
+                Text("Tốc độ: \(speed)")
+            }
+            .font(.system(size: 12, weight: .medium))
+            .padding(8)
+            .background(.black.opacity(0.75))
+            .foregroundColor(.white)
+            .cornerRadius(6)
+            .padding(.leading, 8)
+            .padding(.bottom, 20)
 
-                // 3. Thanh công cụ nổi bên phải
-                VStack(spacing: 12) {
-                    Button(action: { showLayers = true }) {
-                        Image(systemName: "square.grid.2x2.fill").toolbarIconStyle()
-                    }
-                    Button(action: { showSettings = true }) {
-                        Image(systemName: "gearshape.fill").toolbarIconStyle()
-                    }
-                    Button(action: { selectedMenuAction = .drawTools }) {
-                        Image(systemName: "pencil.and.ruler.fill").toolbarIconStyle()
-                    }
-                    Button(action: { selectedMenuAction = .createPoint }) {
-                        Image(systemName: "flag.fill").toolbarIconStyle()
-                    }
+            // 3. Thanh công cụ nổi bên phải (Bao gồm cả nút mở Menu chính ở trên cùng)
+            VStack(spacing: 12) {
+                // Nút mở Menu danh mục chính thay thế cho toolbar
+                Button(action: { showMenu = true }) {
+                    Image(systemName: "line.3.horizontal")
+                        .toolbarIconStyle()
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, 12)
-                .padding(.bottom, 40)
-            }
-            .navigationTitle("vTools Survey")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showMenu = true }) {
-                        Image(systemName: "line.3.horizontal").font(.title3)
-                    }
+                .background(Color.black.opacity(0.8))
+                .clipShape(Circle())
+                
+                Button(action: { showLayers = true }) {
+                    Image(systemName: "square.grid.2x2.fill").toolbarIconStyle()
+                }
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape.fill").toolbarIconStyle()
+                }
+                Button(action: { selectedMenuAction = .drawTools }) {
+                    Image(systemName: "pencil.and.ruler.fill").toolbarIconStyle()
+                }
+                Button(action: { selectedMenuAction = .createPoint }) {
+                    Image(systemName: "flag.fill").toolbarIconStyle()
                 }
             }
-            .sheet(isPresented: $showMenu) {
-                AppSettingsMenuView(selectedAction: $selectedMenuAction)
-            }
-            .sheet(isPresented: $showLayers) {
-                LayersManagementView()
-            }
-            .sheet(isPresented: $showSettings) {
-                MapSettingsView(currentSystem: $currentSystem)
-            }
-            .sheet(item: $selectedMenuAction) { actionItem in
-                ActionDetailView(action: actionItem)
-            }
-            .onChange(of: locationManager.latitudeValue) { newLat in
-                if let lat = newLat, let lon = locationManager.longitudeValue {
-                    northingX = String(format: "%.3f", lat * 111320.0)
-                    eastingY = String(format: "%.3f", lon * 110540.0)
-                }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 12)
+            .padding(.bottom, 40)
+        }
+        .sheet(isPresented: $showMenu) {
+            AppSettingsMenuView(selectedAction: $selectedMenuAction)
+        }
+        .sheet(isPresented: $showLayers) {
+            LayersManagementView()
+        }
+        .sheet(isPresented: $showSettings) {
+            MapSettingsView(currentSystem: $currentSystem)
+        }
+        .sheet(item: $selectedMenuAction) { actionItem in
+            ActionDetailView(action: actionItem)
+        }
+        .onChange(of: locationManager.latitudeValue) { newLat in
+            if let lat = newLat, let lon = locationManager.longitudeValue {
+                northingX = String(format: "%.3f", lat * 111320.0)
+                eastingY = String(format: "%.3f", lon * 110540.0)
             }
         }
     }
