@@ -10,9 +10,9 @@ targets:
     type: application
     platform: iOS
     sources: 
-      - path: vToolsSurvey
+      - path: Sources/vtools-ios
     info:
-      path: vToolsSurvey/Info.plist
+      path: Sources/vtools-ios/Info.plist
     settings:
       # Cấu hình không yêu cầu Signing Certificate (Dành cho TrollStore / Jailbreak)
       DEVELOPMENT_TEAM: ""
