@@ -10,7 +10,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "vToolsSurvey",
-            path: "Sources/vToolsSurvey"
+            path: "vToolsSurvey"
         )
     ]
 )
