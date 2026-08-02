@@ -20,46 +20,51 @@ jobs:
           flutter-version: '3.x'
           channel: 'stable'
 
-      # 3. Khởi tạo iOS Project & Tải thư viện
+      # 3. Tạo Certificate tự ký (Self-Signed) trên Keychain máy ảo để lừa Xcode
+      - name: Create Self-Signed Code Signing Certificate
+        run: |
+          KEYCHAIN_PATH=$HOME/Library/Keychains/build.keychain-db
+          security create-keychain -p "" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 3600 $KEYCHAIN_PATH
+          security unlock-keychain -p "" $KEYCHAIN_PATH
+          
+          # Tạo cert tự ký
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout cert.key -out cert.crt \
+            -subj "/CN=iPhone Developer: TrollStore Build/OU=Dev/O=Local/C=VN"
+          
+          openssl pkcs12 -export -out cert.p12 -inkey cert.key -in cert.crt -passout pass:123456
+          
+          security import cert.p12 -k $KEYCHAIN_PATH -P 123456 -A
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" $KEYCHAIN_PATH
+          security list-keychains -s $KEYCHAIN_PATH
+
+      # 4. Khởi tạo iOS Project & Tải thư viện
       - name: Re-generate iOS Project & Get Dependencies
         run: |
           flutter create --org com.vtools --platforms=ios .
           flutter pub get
 
-      # 4. Thêm quyền GPS vào Info.plist
+      # 5. Thêm quyền GPS vào Info.plist
       - name: Add Location Permissions to Info.plist
         run: |
           PLIST="ios/Runner/Info.plist"
           plutil -insert NSLocationWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
           plutil -insert NSLocationAlwaysAndWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
 
-      # 5. Tạo cấu hình Release và Pods cho iOS
-      - name: Prepare iOS Build Config
+      # 6. Build Unsigned/Ad-hoc trực tiếp bằng Flutter
+      - name: Build iOS App with Ad-hoc Signing
         run: |
-          flutter build ios --release --config-only
+          flutter build ios --release --no-codesign
 
-      # 6. Build trực tiếp bằng xcodebuild ép bỏ qua Code Signing & Team ID
-      - name: Xcode Build Unsigned App
-        run: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath ../build/ios_derived \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-
-      # 7. Đóng gói Runner.app thành file IPA chuẩn cho TrollStore
+      # 7. Đóng gói Runner.app thành IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/ios_derived/Build/Products/Release-iphoneos/Runner.app Payload/
+          cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 8. Upload file IPA lên GitHub Artifacts
+      # 8. Upload file IPA lên Artifacts
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
