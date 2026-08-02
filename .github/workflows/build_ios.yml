@@ -1,0 +1,42 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      # 1. Lấy mã nguồn từ Repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Cài đặt môi trường Java & Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+
+      # 3. Cài đặt các thư viện phụ thuộc
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. Build file iOS app (Chưa ký chứng chỉ - Unsigned IPA)
+      - name: Build iOS No Codesign
+        run: flutter build ios --release --no-codesign
+
+      # 5. Đóng gói thư mục Payload thành file .ipa
+      - name: Create IPA Package
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -r vtools_survey_custom.ipa Payload
+
+      # 6. Tải file .ipa lên GitHub Artifacts để download về máy
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ios-ipa-build
+          path: vtools_survey_custom.ipa
