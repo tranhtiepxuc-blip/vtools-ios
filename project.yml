@@ -20,3 +20,6 @@ targets:
       CODE_SIGN_IDENTITY: ""
       CODE_SIGNING_ALLOWED: "NO"
       PRODUCT_BUNDLE_IDENTIFIER: com.vtools.survey
+      # Cấu hình bổ sung giúp giảm thiểu lỗi linker khi biên dịch mã dịch ngược
+      OTHER_LDFLAGS: "$(inherited) -ObjC"
+      EXCLUDED_ARCHS[sdk=iphonesimulator*]: "i386"
