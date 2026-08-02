@@ -13,13 +13,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Tạo cấu hình dự án & Mã nguồn đầy đủ tính năng GIS / Trắc địa
-      - name: Install xcodegen & Generate Full GIS App
+      # 2. Tạo cấu trúc thư mục & các file Swift riêng biệt
+      - name: Install xcodegen & Generate Project
         run: |
           brew install xcodegen
 
-          # Tạo Info.plist
+          # Tạo thư mục chứa code
           mkdir -p vToolsSurvey
+
+          # File 1: Info.plist
           cat << 'EOF' > vToolsSurvey/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -56,35 +58,11 @@ jobs:
           </plist>
           EOF
 
-          # Tạo project.yml
-          cat << 'EOF' > project.yml
-          name: vToolsSurvey
-          options:
-            bundleIdPrefix: com.vtools
-            deploymentTarget:
-              iOS: "16.0"
-          targets:
-            vToolsSurvey:
-              type: application
-              platform: iOS
-              sources: [vToolsSurvey]
-              info:
-                path: vToolsSurvey/Info.plist
-              settings:
-                DEVELOPMENT_TEAM: "1234567890"
-                CODE_SIGNING_REQUIRED: "NO"
-                CODE_SIGN_IDENTITY: ""
-                CODE_SIGNING_ALLOWED: "NO"
-          EOF
-
-          # Viết Mã nguồn Swift đầy đủ tính năng GIS & VN2000
-          cat << 'EOF' > vToolsSurvey/ContentView.swift
-          import SwiftUI
-          import MapKit
+          # File 2: LocationManager.swift
+          cat << 'EOF' > vToolsSurvey/LocationManager.swift
+          import Foundation
           import CoreLocation
-          import UniformTypeIdentifiers
 
-          // MARK: - Manager Quản lý GPS
           class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
               private let manager = CLLocationManager()
               @Published var userLocation: CLLocationCoordinate2D?
@@ -101,21 +79,21 @@ jobs:
               
               func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
                   guard let loc = locations.last else { return }
-                  userLocation = loc.coordinate
-                  altitude = loc.altitude
-                  accuracy = loc.horizontalAccuracy
+                  DispatchQueue.main.async {
+                      self.userLocation = loc.coordinate
+                      self.altitude = loc.altitude
+                      self.accuracy = loc.horizontalAccuracy
+                  }
               }
           }
 
-          // MARK: - Chuyển đổi VN-2000 (Thuật toán Giả lập Gauss-Kruger 6/3 độ cho VN)
           struct VN2000Converter {
               static func convertToVN2000(lat: Double, lon: Double, centralMeridian: Double = 105.75) -> (x: Double, y: Double) {
-                  // Thuật toán xấp xỉ hệ tọa độ phẳng VN-2000
                   let radLat = lat * .pi / 180.0
                   let radLon = lon * .pi / 180.0
                   let radCM = centralMeridian * .pi / 180.0
                   
-                  let a = 6378137.0 // Ellipsoid WGS84 / VN-2000
+                  let a = 6378137.0
                   let dLon = radLon - radCM
                   
                   let x = a * (radLat + sin(radLat) * cos(radLat) * 0.00669438)
@@ -124,12 +102,81 @@ jobs:
                   return (x: x, y: y)
               }
           }
+          EOF
 
-          // MARK: - Giao diện chính SwiftUI
+          # File 3: MapViewRepresentable.swift
+          cat << 'EOF' > vToolsSurvey/MapViewRepresentable.swift
+          import SwiftUI
+          import MapKit
+
+          struct MapViewRepresentable: UIViewRepresentable {
+              @Binding var region: MKCoordinateRegion
+              var mapType: MKMapType
+              @Binding var pins: [CLLocationCoordinate2D]
+
+              func makeUIView(context: Context) -> MKMapView {
+                  let mapView = MKMapView()
+                  mapView.showsUserLocation = true
+                  mapView.userTrackingMode = .follow
+                  return mapView
+              }
+
+              func updateUIView(_ uiView: MKMapView, context: Context) {
+                  uiView.mapType = mapType
+                  
+                  let currentAnnos = uiView.annotations.filter { !($0 is MKUserLocation) }
+                  uiView.removeAnnotations(currentAnnos)
+                  
+                  for (idx, coord) in pins.enumerated() {
+                      let anno = MKPointAnnotation()
+                      anno.coordinate = coord
+                      anno.title = "Điểm \(idx + 1)"
+                      uiView.addAnnotation(anno)
+                  }
+              }
+          }
+          EOF
+
+          # File 4: DocumentPicker.swift
+          cat << 'EOF' > vToolsSurvey/DocumentPicker.swift
+          import SwiftUI
+          import UniformTypeIdentifiers
+
+          struct DocumentPicker: UIViewControllerRepresentable {
+              var onPick: (URL) -> Void
+
+              func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+                  let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
+                  picker.delegate = context.coordinator
+                  return picker
+              }
+
+              func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+              func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+              class Coordinator: NSObject, UIDocumentPickerDelegate {
+                  var parent: DocumentPicker
+                  init(_ parent: DocumentPicker) { self.parent = parent }
+
+                  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+                      guard let url = urls.first else { return }
+                      parent.onPick(url)
+                  }
+              }
+          }
+          EOF
+
+          # File 5: ContentView.swift
+          cat << 'EOF' > vToolsSurvey/ContentView.swift
+          import SwiftUI
+          import MapKit
+          import CoreLocation
+
           struct ContentView: View {
               @StateObject private var locationManager = LocationManager()
               @State private var mapType: MKMapType = .standard
-              @State private var centralMeridian: Double = 105.75 // Kinh tuyến trục mặc định
+              @State private var centralMeridian: Double = 105.75
               @State private var pins: [CLLocationCoordinate2D] = []
               @State private var isPickerPresented = false
               @State private var importedFileName = ""
@@ -139,7 +186,6 @@ jobs:
                   span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
               )
 
-              // Tính khoảng cách giữa các điểm
               var totalDistance: Double {
                   guard pins.count > 1 else { return 0 }
                   var dist: Double = 0
@@ -153,11 +199,9 @@ jobs:
 
               var body: some View {
                   ZStack {
-                      // 1. Bản đồ MapKit Native
                       MapViewRepresentable(region: $region, mapType: mapType, pins: $pins)
                           .edgesIgnoringSafeArea(.all)
                       
-                      // 2. Bảng thông tin GPS & VN-2000 Top HUD
                       VStack {
                           VStack(alignment: .leading, spacing: 6) {
                               Text("📍 HỆ TỌA ĐỘ VÀ GPS")
@@ -178,7 +222,7 @@ jobs:
                                   }.font(.footnote)
                                   
                                   HStack {
-                                      Text("Độ chính xác: ±%.1fm | Cao độ: %.1fm", locationManager.accuracy, locationManager.altitude)
+                                      Text(String(format: "Độ chính xác: ±%.1fm | Cao độ: %.1fm", locationManager.accuracy, locationManager.altitude))
                                           .font(.caption2).foregroundColor(.gray)
                                   }
                               } else {
@@ -199,7 +243,6 @@ jobs:
                           
                           Spacer()
                           
-                          // 3. Thanh điều khiển đo đạc Bottom Toolbar
                           VStack(spacing: 8) {
                               if !pins.isEmpty {
                                   HStack {
@@ -211,8 +254,7 @@ jobs:
                                   .padding(.horizontal)
                               }
                               
-                              HStack(spacing: 12) {
-                                  // Đổi lớp bản đồ
+                              HStack(spacing: 8) {
                                   Button(action: {
                                       if mapType == .standard { mapType = .satellite }
                                       else if mapType == .satellite { mapType = .hybrid }
@@ -226,7 +268,6 @@ jobs:
                                           .cornerRadius(8)
                                   }
                                   
-                                  // Thêm điểm đo đạc
                                   Button(action: {
                                       if let loc = locationManager.userLocation {
                                           pins.append(loc)
@@ -242,7 +283,6 @@ jobs:
                                           .cornerRadius(8)
                                   }
                                   
-                                  // Xóa điểm
                                   Button(action: { pins.removeAll() }) {
                                       Label("Xóa", systemImage: "trash")
                                           .font(.caption).bold()
@@ -252,7 +292,6 @@ jobs:
                                           .cornerRadius(8)
                                   }
                                   
-                                  // Import File KML/GeoJSON
                                   Button(action: { isPickerPresented = true }) {
                                       Label("Import", systemImage: "doc.badge.plus")
                                           .font(.caption).bold()
@@ -278,58 +317,11 @@ jobs:
                   }
               }
           }
+          EOF
 
-          // MARK: - MapKit UI Binding
-          struct MapViewRepresentable: UIViewRepresentable {
-              @Binding var region: MKCoordinateRegion
-              var mapType: MKMapType
-              @Binding var pins: [CLLocationCoordinate2D]
-
-              func makeUIView(context: Context) -> MKMapView {
-                  let mapView = MKMapView()
-                  mapView.showsUserLocation = true
-                  mapView.userTrackingMode = .follow
-                  return mapView
-              }
-
-              func updateUIView(_ uiView: MKMapView, context: Context) {
-                  uiView.mapType = mapType
-                  
-                  // Update annotations
-                  uiView.removeAnnotations(uiView.annotations)
-                  for (idx, coord) in pins.enumerated() {
-                      let anno = MKPointAnnotation()
-                      anno.coordinate = coord
-                      anno.title = "Điểm \(idx + 1)"
-                      uiView.addAnnotation(anno)
-                  }
-              }
-          }
-
-          // MARK: - Document Picker hỗ trợ KML / GeoJSON
-          struct DocumentPicker: UIViewControllerRepresentable {
-              var onPick: (URL) -> Void
-
-              func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-                  let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
-                  picker.delegate = context.coordinator
-                  return picker
-              }
-
-              func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
-
-              func makeCoordinator() -> Coordinator { Coordinator(self) }
-
-              class Coordinator: NSObject, UIDocumentPickerDelegate {
-                  var parent: DocumentPicker
-                  init(_ parent: DocumentPicker) { self.parent = parent }
-
-                  func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-                      guard let url = urls.first else { return }
-                      parent.onPick(url)
-                  }
-              }
-          }
+          # File 6: vToolsSurveyApp.swift
+          cat << 'EOF' > vToolsSurvey/vToolsSurveyApp.swift
+          import SwiftUI
 
           @main
           struct vToolsSurveyApp: App {
@@ -341,10 +333,31 @@ jobs:
           }
           EOF
 
-          # Sinh xcodeproj
+          # File 7: project.yml
+          cat << 'EOF' > project.yml
+          name: vToolsSurvey
+          options:
+            bundleIdPrefix: com.vtools
+            deploymentTarget:
+              iOS: "16.0"
+          targets:
+            vToolsSurvey:
+              type: application
+              platform: iOS
+              sources: [vToolsSurvey]
+              info:
+                path: vToolsSurvey/Info.plist
+              settings:
+                DEVELOPMENT_TEAM: "1234567890"
+                CODE_SIGNING_REQUIRED: "NO"
+                CODE_SIGN_IDENTITY: ""
+                CODE_SIGNING_ALLOWED: "NO"
+          EOF
+
+          # Sinh file xcodeproj
           xcodegen generate
 
-      # 3. Build ứng dụng dạng Unsigned bằng xcodebuild
+      # 3. Build Unsigned App
       - name: Build App with xcodebuild
         run: |
           xcodebuild build \
@@ -358,14 +371,14 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE_SPECIFIER=""
 
-      # 4. Đóng gói thành IPA cho TrollStore
+      # 4. Đóng gói IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
           cp -r build/DerivedData/Build/Products/Release-iphoneos/vToolsSurvey.app Payload/
           zip -r vtools_survey_native.ipa Payload
 
-      # 5. Xuất file IPA
+      # 5. Xuất IPA
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
