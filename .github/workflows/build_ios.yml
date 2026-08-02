@@ -9,19 +9,15 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-      # 1. Lấy mã nguồn
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Tạo cấu trúc thư mục & các file Swift riêng biệt
-      - name: Install xcodegen & Generate Project
+      - name: Install xcodegen & Generate Full vTools GIS App
         run: |
           brew install xcodegen
-
-          # Tạo thư mục chứa code
           mkdir -p vToolsSurvey
 
-          # File 1: Info.plist
+          # 1. File Info.plist
           cat << 'EOF' > vToolsSurvey/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -42,7 +38,7 @@ jobs:
               <key>LSRequiresIPhoneOS</key>
               <true/>
               <key>NSLocationWhenInUseUsageDescription</key>
-              <string>vTools cần vị trí GPS để chuyển đổi VN-2000 và đo đạc.</string>
+              <string>vTools cần vị trí GPS để chuyển đổi VN-2000 và đo đạc thực địa.</string>
               <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
               <string>vTools cần vị trí GPS để đo đạc thực địa.</string>
               <key>UIFileSharingEnabled</key>
@@ -58,7 +54,87 @@ jobs:
           </plist>
           EOF
 
-          # File 2: LocationManager.swift
+          # 2. File VN2000Data.swift (Danh sách KT Trục 63 Tỉnh Thành & Thuật toán Chuyển đổi)
+          cat << 'EOF' > vToolsSurvey/VN2000Data.swift
+          import Foundation
+          import CoreLocation
+
+          struct Province: Identifiable, Hashable {
+              let id = UUID()
+              let name: String
+              let centralMeridian: Double // Kinh tuyến trục (Múi 3 độ)
+          }
+
+          class VN2000Helper {
+              static let provinces: [Province] = [
+                  Province(name: "TP. Hồ Chí Minh", centralMeridian: 105.45),
+                  Province(name: "Hà Nội", centralMeridian: 105.00),
+                  Province(name: "Đà Nẵng", centralMeridian: 107.45),
+                  Province(name: "Đồng Nai", centralMeridian: 107.45),
+                  Province(name: "Bình Dương", centralMeridian: 105.45),
+                  Province(name: "Bà Rịa - Vũng Tàu", centralMeridian: 107.45),
+                  Province(name: "Long An", centralMeridian: 105.30),
+                  Province(name: "Cần Thơ", centralMeridian: 105.00),
+                  Province(name: "An Giang", centralMeridian: 104.45),
+                  Province(name: "Bắc Giang", centralMeridian: 107.00),
+                  Province(name: "Bắc Ninh", centralMeridian: 105.30),
+                  Province(name: "Bình Định", centralMeridian: 108.15),
+                  Province(name: "Bình Thuận", centralMeridian: 108.30),
+                  Province(name: "Cà Mau", centralMeridian: 104.30),
+                  Province(name: "Đắk Lắk", centralMeridian: 108.30),
+                  Province(name: "Hải Phòng", centralMeridian: 105.45),
+                  Province(name: "Khánh Hòa", centralMeridian: 108.15),
+                  Province(name: "Lâm Đồng", centralMeridian: 107.45),
+                  Province(name: "Nghệ An", centralMeridian: 104.45),
+                  Province(name: "Thừa Thiên Huế", centralMeridian: 107.30),
+                  Province(name: "Thanh Hóa", centralMeridian: 105.00),
+                  Province(name: "Kiên Giang", centralMeridian: 104.30)
+              ]
+
+              // Chuyển từ WGS84 sang VN-2000 Phẳng (X, Y)
+              static func wgs84ToVN2000(lat: Double, lon: Double, cm: Double) -> (x: Double, y: Double) {
+                  let radLat = lat * .pi / 180.0
+                  let radLon = lon * .pi / 180.0
+                  let radCM = cm * .pi / 180.0
+                  
+                  let a = 6378137.0
+                  let e2 = 0.00669438
+                  let dLon = radLon - radCM
+                  
+                  let N = a / sqrt(1 - e2 * sin(radLat) * sin(radLat))
+                  let T = tan(radLat) * tan(radLat)
+                  let C = e2 / (1 - e2) * cos(radLat) * cos(radLat)
+                  let A = dLon * cos(radLat)
+                  
+                  let M = a * ((1 - e2/4 - 3*e2*e2/64) * radLat - (3*e2/8 + 3*e2*e2/32) * sin(2*radLat) + (15*e2*e2/256) * sin(4*radLat))
+                  
+                  let x = M + N * tan(radLat) * (A*A/2 + (5 - T + 9*C + 4*C*C) * pow(A, 4)/24)
+                  let y = 500000.0 + N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T) * pow(A, 5)/120)
+                  
+                  return (x: x, y: y)
+              }
+
+              // Tính diện tích vùng Polygon (Shoelace Algorithm)
+              static func calculatePolygonArea(coords: [CLLocationCoordinate2D], cm: Double) -> Double {
+                  guard coords.count >= 3 else { return 0 }
+                  var points: [(x: Double, y: Double)] = []
+                  for c in coords {
+                      points.append(wgs84ToVN2000(lat: c.latitude, lon: c.longitude, cm: cm))
+                  }
+                  
+                  var area: Double = 0
+                  let n = points.count
+                  for i in 0..<n {
+                      let j = (i + 1) % n
+                      area += points[i].x * points[j].y
+                      area -= points[j].x * points[i].y
+                  }
+                  return abs(area) / 2.0 // Đơn vị: m²
+              }
+          }
+          EOF
+
+          # 3. File LocationManager.swift
           cat << 'EOF' > vToolsSurvey/LocationManager.swift
           import Foundation
           import CoreLocation
@@ -68,13 +144,25 @@ jobs:
               @Published var userLocation: CLLocationCoordinate2D?
               @Published var altitude: Double = 0
               @Published var accuracy: Double = 0
+              @Published var isAuthorized = false
               
               override init() {
                   super.init()
                   manager.delegate = self
                   manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+                  manager.distanceFilter = kCLDistanceFilterNone
                   manager.requestWhenInUseAuthorization()
                   manager.startUpdatingLocation()
+              }
+              
+              func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+                  switch manager.authorizationStatus {
+                  case .authorizedWhenInUse, .authorizedAlways:
+                      isAuthorized = true
+                      manager.startUpdatingLocation()
+                  default:
+                      isAuthorized = false
+                  }
               }
               
               func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -86,25 +174,9 @@ jobs:
                   }
               }
           }
-
-          struct VN2000Converter {
-              static func convertToVN2000(lat: Double, lon: Double, centralMeridian: Double = 105.75) -> (x: Double, y: Double) {
-                  let radLat = lat * .pi / 180.0
-                  let radLon = lon * .pi / 180.0
-                  let radCM = centralMeridian * .pi / 180.0
-                  
-                  let a = 6378137.0
-                  let dLon = radLon - radCM
-                  
-                  let x = a * (radLat + sin(radLat) * cos(radLat) * 0.00669438)
-                  let y = a * dLon * cos(radLat) + 500000.0
-                  
-                  return (x: x, y: y)
-              }
-          }
           EOF
 
-          # File 3: MapViewRepresentable.swift
+          # 4. File MapViewRepresentable.swift (Hỗ trợ vẽ Pin, Line, Polygon)
           cat << 'EOF' > vToolsSurvey/MapViewRepresentable.swift
           import SwiftUI
           import MapKit
@@ -113,9 +185,11 @@ jobs:
               @Binding var region: MKCoordinateRegion
               var mapType: MKMapType
               @Binding var pins: [CLLocationCoordinate2D]
+              @Binding var userLocation: CLLocationCoordinate2D?
 
               func makeUIView(context: Context) -> MKMapView {
                   let mapView = MKMapView()
+                  mapView.delegate = context.coordinator
                   mapView.showsUserLocation = true
                   mapView.userTrackingMode = .follow
                   return mapView
@@ -124,26 +198,65 @@ jobs:
               func updateUIView(_ uiView: MKMapView, context: Context) {
                   uiView.mapType = mapType
                   
-                  let currentAnnos = uiView.annotations.filter { !($0 is MKUserLocation) }
-                  uiView.removeAnnotations(currentAnnos)
+                  // Xóa overlays & annotations cũ
+                  uiView.removeOverlays(uiView.overlays)
+                  let annos = uiView.annotations.filter { !($0 is MKUserLocation) }
+                  uiView.removeAnnotations(annos)
                   
+                  // Cắm mốc
                   for (idx, coord) in pins.enumerated() {
                       let anno = MKPointAnnotation()
                       anno.coordinate = coord
-                      anno.title = "Điểm \(idx + 1)"
+                      anno.title = "Đ\(idx + 1)"
                       uiView.addAnnotation(anno)
+                  }
+                  
+                  // Vẽ đường Polyline & Vùng Polygon
+                  if pins.count >= 2 {
+                      let polyline = MKPolyline(coordinates: pins, count: pins.count)
+                      uiView.addOverlay(polyline)
+                  }
+                  if pins.count >= 3 {
+                      let polygon = MKPolygon(coordinates: pins, count: pins.count)
+                      uiView.addOverlay(polygon)
+                  }
+              }
+
+              func makeCoordinator() -> Coordinator {
+                  Coordinator(self)
+              }
+
+              class Coordinator: NSObject, MKMapViewDelegate {
+                  var parent: MapViewRepresentable
+                  init(_ parent: MapViewRepresentable) { self.parent = parent }
+
+                  func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+                      if let polygon = overlay as? MKPolygon {
+                          let renderer = MKPolygonRenderer(polygon: polygon)
+                          renderer.fillColor = UIColor.systemBlue.withAlphaComponent(0.25)
+                          renderer.strokeColor = UIColor.systemBlue
+                          renderer.lineWidth = 2
+                          return renderer
+                      } else if let polyline = overlay as? MKPolyline {
+                          let renderer = MKPolylineRenderer(polyline: polyline)
+                          renderer.strokeColor = UIColor.systemRed
+                          renderer.lineWidth = 3
+                          return renderer
+                      }
+                      return MKOverlayRenderer(overlay: overlay)
                   }
               }
           }
           EOF
 
-          # File 4: DocumentPicker.swift
+          # 5. File DocumentPicker.swift
           cat << 'EOF' > vToolsSurvey/DocumentPicker.swift
           import SwiftUI
           import UniformTypeIdentifiers
+          import CoreLocation
 
           struct DocumentPicker: UIViewControllerRepresentable {
-              var onPick: (URL) -> Void
+              var onPick: (URL, [CLLocationCoordinate2D]) -> Void
 
               func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
                   let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: true)
@@ -161,13 +274,39 @@ jobs:
 
                   func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
                       guard let url = urls.first else { return }
-                      parent.onPick(url)
+                      var extractedCoords: [CLLocationCoordinate2D] = []
+                      
+                      // Thử đọc nội dung text của file KML / GeoJSON
+                      if let content = try? String(contentsOf: url, encoding: .utf8) {
+                          let matches = content.matches(of: /-?\d+\.\d+/)
+                          var numbers: [Double] = []
+                          for m in matches {
+                              if let num = Double(m.output) { numbers.append(num) }
+                          }
+                          
+                          // Ghép cặp Lon, Lat
+                          var i = 0
+                          while i < numbers.count - 1 {
+                              let num1 = numbers[i]
+                              let num2 = numbers[i+1]
+                              if (num1 >= 102 && num1 <= 110) && (num2 >= 8 && num2 <= 24) {
+                                  extractedCoords.append(CLLocationCoordinate2D(latitude: num2, longitude: num1))
+                                  i += 2
+                              } else if (num2 >= 102 && num2 <= 110) && (num1 >= 8 && num1 <= 24) {
+                                  extractedCoords.append(CLLocationCoordinate2D(latitude: num1, longitude: num2))
+                                  i += 2
+                              } else {
+                                  i += 1
+                              }
+                          }
+                      }
+                      parent.onPick(url, extractedCoords)
                   }
               }
           }
           EOF
 
-          # File 5: ContentView.swift
+          # 6. File ContentView.swift (Giao diện chính vTools GIS)
           cat << 'EOF' > vToolsSurvey/ContentView.swift
           import SwiftUI
           import MapKit
@@ -175,15 +314,15 @@ jobs:
 
           struct ContentView: View {
               @StateObject private var locationManager = LocationManager()
-              @State private var mapType: MKMapType = .standard
-              @State private var centralMeridian: Double = 105.75
+              @State private var mapType: MKMapType = .hybrid
+              @State private var selectedProvince = VN2000Helper.provinces[0]
               @State private var pins: [CLLocationCoordinate2D] = []
               @State private var isPickerPresented = false
               @State private var importedFileName = ""
               
               @State private var region = MKCoordinateRegion(
                   center: CLLocationCoordinate2D(latitude: 10.7769, longitude: 106.7009),
-                  span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                  span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
               )
 
               var totalDistance: Double {
@@ -197,36 +336,59 @@ jobs:
                   return dist
               }
 
+              var areaSqMeters: Double {
+                  VN2000Helper.calculatePolygonArea(coords: pins, cm: selectedProvince.centralMeridian)
+              }
+
               var body: some View {
                   ZStack {
-                      MapViewRepresentable(region: $region, mapType: mapType, pins: $pins)
+                      MapViewRepresentable(region: $region, mapType: mapType, pins: $pins, userLocation: $locationManager.userLocation)
                           .edgesIgnoringSafeArea(.all)
                       
                       VStack {
-                          VStack(alignment: .leading, spacing: 6) {
-                              Text("📍 HỆ TỌA ĐỘ VÀ GPS")
-                                  .font(.caption).bold().foregroundColor(.secondary)
+                          // Top Panel: VN-2000 HUD & Tỉnh Thành
+                          VStack(alignment: .leading, spacing: 8) {
+                              HStack {
+                                  Image(systemName: "location.fill").foregroundColor(.red)
+                                  Text("HỆ TỌA ĐỘ VN-2000").font(.caption).bold().foregroundColor(.secondary)
+                                  Spacer()
+                                  
+                                  Picker("Tỉnh thành", selection: $selectedProvince) {
+                                      ForEach(VN2000Helper.provinces) { p in
+                                          Text(p.name).tag(p)
+                                      }
+                                  }
+                                  .pickerStyle(.menu)
+                                  .accentColor(.blue)
+                              }
                               
                               if let loc = locationManager.userLocation {
-                                  let vn2000 = VN2000Converter.convertToVN2000(lat: loc.latitude, lon: loc.longitude, centralMeridian: centralMeridian)
+                                  let vn2000 = VN2000Helper.wgs84ToVN2000(lat: loc.latitude, lon: loc.longitude, cm: selectedProvince.centralMeridian)
+                                  
+                                  Divider()
                                   
                                   HStack {
-                                      Text("WGS84:").bold()
-                                      Text(String(format: "%.5f, %.5f", loc.latitude, loc.longitude))
-                                  }.font(.footnote)
+                                      VStack(alignment: .leading) {
+                                          Text("X (Bắc):").font(.caption2).foregroundColor(.gray)
+                                          Text(String(format: "%.2f m", vn2000.x)).font(.subheadline).bold().foregroundColor(.blue)
+                                      }
+                                      Spacer()
+                                      VStack(alignment: .leading) {
+                                          Text("Y (Đông):").font(.caption2).foregroundColor(.gray)
+                                          Text(String(format: "%.2f m", vn2000.y)).font(.subheadline).bold().foregroundColor(.blue)
+                                      }
+                                  }
                                   
                                   HStack {
-                                      Text("VN-2000:").bold().foregroundColor(.blue)
-                                      Text(String(format: "X: %.2f | Y: %.2f", vn2000.x, vn2000.y))
-                                          .bold().foregroundColor(.blue)
-                                  }.font(.footnote)
-                                  
-                                  HStack {
-                                      Text(String(format: "Độ chính xác: ±%.1fm | Cao độ: %.1fm", locationManager.accuracy, locationManager.altitude))
-                                          .font(.caption2).foregroundColor(.gray)
+                                      Text(String(format: "WGS84: %.6f, %.6f", loc.latitude, loc.longitude)).font(.caption2)
+                                      Spacer()
+                                      Text(String(format: "Sai số: ±%.1fm", locationManager.accuracy)).font(.caption2).foregroundColor(.green)
                                   }
                               } else {
-                                  Text("Đang định vị GPS...").font(.footnote).foregroundColor(.orange)
+                                  HStack {
+                                      ProgressView().scaleEffect(0.8)
+                                      Text("Đang bắt tín hiệu vệ tinh GPS...").font(.footnote).foregroundColor(.orange)
+                                  }
                               }
                               
                               if !importedFileName.isEmpty {
@@ -235,37 +397,44 @@ jobs:
                               }
                           }
                           .padding(12)
-                          .background(Color.white.opacity(0.92))
-                          .cornerRadius(12)
-                          .shadow(radius: 4)
+                          .background(Color.white.opacity(0.95))
+                          .cornerRadius(14)
+                          .shadow(radius: 5)
                           .padding(.top, 40)
-                          .padding(.horizontal, 16)
+                          .padding(.horizontal, 12)
                           
                           Spacer()
                           
-                          VStack(spacing: 8) {
+                          // Bottom Panel: Bảng Đo Đạc Diện Tích & ToolBar
+                          VStack(spacing: 10) {
                               if !pins.isEmpty {
                                   HStack {
-                                      Text("Số điểm: \(pins.count)")
+                                      VStack(alignment: .leading) {
+                                          Text("Số điểm: \(pins.count)").font(.caption).bold()
+                                          Text(String(format: "Chiều dài ranh: %.1f m", totalDistance)).font(.footnote).foregroundColor(.blue)
+                                      }
                                       Spacer()
-                                      Text(String(format: "Khoảng cách: %.1f m", totalDistance)).bold()
+                                      if pins.count >= 3 {
+                                          VStack(alignment: .trailing) {
+                                              Text("DIỆN TÍCH VÙNG").font(.caption2).foregroundColor(.gray)
+                                              Text(String(format: "%.1f m²", areaSqMeters)).font(.headline).bold().foregroundColor(.red)
+                                              Text(String(format: "(%.3f ha)", areaSqMeters / 10000.0)).font(.caption2).foregroundColor(.secondary)
+                                          }
+                                      }
                                   }
-                                  .font(.footnote)
-                                  .padding(.horizontal)
+                                  .padding(.horizontal, 8)
+                                  Divider()
                               }
                               
                               HStack(spacing: 8) {
                                   Button(action: {
-                                      if mapType == .standard { mapType = .satellite }
-                                      else if mapType == .satellite { mapType = .hybrid }
-                                      else { mapType = .standard }
+                                      if mapType == .hybrid { mapType = .standard }
+                                      else if mapType == .standard { mapType = .satellite }
+                                      else { mapType = .hybrid }
                                   }) {
-                                      Label("Lớp BĐ", systemImage: "layers.fill")
-                                          .font(.caption).bold()
-                                          .padding(8)
-                                          .background(Color.blue)
-                                          .foregroundColor(.white)
-                                          .cornerRadius(8)
+                                      VStack { Image(systemName: "layers.fill"); Text("Lớp BĐ").font(.caption2) }
+                                          .frame(maxWidth: .infinity).padding(8)
+                                          .background(Color.blue).foregroundColor(.white).cornerRadius(10)
                                   }
                                   
                                   Button(action: {
@@ -275,51 +444,52 @@ jobs:
                                           pins.append(region.center)
                                       }
                                   }) {
-                                      Label("Ghim điểm", systemImage: "mappin.and.ellipse")
-                                          .font(.caption).bold()
-                                          .padding(8)
-                                          .background(Color.green)
-                                          .foregroundColor(.white)
-                                          .cornerRadius(8)
+                                      VStack { Image(systemName: "mappin.and.ellipse"); Text("Ghim điểm").font(.caption2) }
+                                          .frame(maxWidth: .infinity).padding(8)
+                                          .background(Color.green).foregroundColor(.white).cornerRadius(10)
                                   }
                                   
-                                  Button(action: { pins.removeAll() }) {
-                                      Label("Xóa", systemImage: "trash")
-                                          .font(.caption).bold()
-                                          .padding(8)
-                                          .background(Color.red)
-                                          .foregroundColor(.white)
-                                          .cornerRadius(8)
+                                  Button(action: { if !pins.isEmpty { pins.removeLast() } }) {
+                                      VStack { Image(systemName: "arrow.uturn.backward"); Text("Lùi điểm").font(.caption2) }
+                                          .frame(maxWidth: .infinity).padding(8)
+                                          .background(Color.orange).foregroundColor(.white).cornerRadius(10)
+                                  }
+                                  
+                                  Button(action: { pins.removeAll(); importedFileName = "" }) {
+                                      VStack { Image(systemName: "trash"); Text("Xóa hết").font(.caption2) }
+                                          .frame(maxWidth: .infinity).padding(8)
+                                          .background(Color.red).foregroundColor(.white).cornerRadius(10)
                                   }
                                   
                                   Button(action: { isPickerPresented = true }) {
-                                      Label("Import", systemImage: "doc.badge.plus")
-                                          .font(.caption).bold()
-                                          .padding(8)
-                                          .background(Color.orange)
-                                          .foregroundColor(.white)
-                                          .cornerRadius(8)
+                                      VStack { Image(systemName: "doc.badge.plus"); Text("Import").font(.caption2) }
+                                          .frame(maxWidth: .infinity).padding(8)
+                                          .background(Color.purple).foregroundColor(.white).cornerRadius(10)
                                   }
                               }
                           }
                           .padding(12)
                           .background(Color.white.opacity(0.95))
                           .cornerRadius(16)
-                          .shadow(radius: 5)
-                          .padding(.horizontal, 16)
+                          .shadow(radius: 6)
+                          .padding(.horizontal, 12)
                           .padding(.bottom, 20)
                       }
                   }
                   .sheet(isPresented: $isPickerPresented) {
-                      DocumentPicker { url in
+                      DocumentPicker { url, coords in
                           importedFileName = url.lastPathComponent
+                          if !coords.isEmpty {
+                              pins = coords
+                              region.center = coords.first!
+                          }
                       }
                   }
               }
           }
           EOF
 
-          # File 6: vToolsSurveyApp.swift
+          # 7. File App
           cat << 'EOF' > vToolsSurvey/vToolsSurveyApp.swift
           import SwiftUI
 
@@ -333,7 +503,7 @@ jobs:
           }
           EOF
 
-          # File 7: project.yml
+          # 8. File project.yml
           cat << 'EOF' > project.yml
           name: vToolsSurvey
           options:
@@ -354,10 +524,8 @@ jobs:
                 CODE_SIGNING_ALLOWED: "NO"
           EOF
 
-          # Sinh file xcodeproj
           xcodegen generate
 
-      # 3. Build Unsigned App
       - name: Build App with xcodebuild
         run: |
           xcodebuild build \
@@ -371,14 +539,12 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE_SPECIFIER=""
 
-      # 4. Đóng gói IPA cho TrollStore
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
           cp -r build/DerivedData/Build/Products/Release-iphoneos/vToolsSurvey.app Payload/
           zip -r vtools_survey_native.ipa Payload
 
-      # 5. Xuất IPA
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
