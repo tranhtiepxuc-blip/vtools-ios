@@ -14,8 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen & xcbeautify
+        run: brew install xcodegen xcbeautify
 
       - name: Generate Xcode Project
         run: xcodegen generate
@@ -30,7 +30,10 @@ jobs:
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO | xcbeautify || {
+              echo "=== BUILD FAILED ==="
+              exit 1
+            }
 
       - name: Package IPA manually
         run: |
