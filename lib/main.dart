@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/LatLng.dart';
+import 'package:latlong2/latlong.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,23 +12,42 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('vTools Survey iOS (Demo)'),
-          backgroundColor: Colors.green,
+      debugShowCheckedModeBanner: false,
+      title: 'vTools Survey iOS',
+      theme: ThemeData(primarySwatch: Colors.green),
+      home: const MapScreen(),
+    );
+  }
+}
+
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  final LatLng _initialCenter = const LatLng(21.028511, 105.804817);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('vTools Survey - Bản đồ'),
+        backgroundColor: Colors.green,
+      ),
+      body: FlutterMap(
+        options: MapOptions(
+          initialCenter: _initialCenter,
+          initialZoom: 13.0,
         ),
-        body: FlutterMap(
-          options: const MapOptions(
-            initialCenter: LatLng(21.028511, 105.804817), // Tọa độ Hà Nội
-            initialZoom: 13.0,
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.vtools.vtoolsClone',
           ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.vtools_clone',
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
