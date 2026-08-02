@@ -19,6 +19,7 @@ jobs:
             -scheme vToolsSurvey \
             -destination "generic/platform=iOS" \
             -configuration Release \
+            -derivedDataPath .derived_data \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
@@ -26,10 +27,15 @@ jobs:
         run: |
           APP_NAME="vToolsSurvey"
           
-          # Tìm file .app đã được build xong tự động trên runner
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "$APP_NAME.app" -type d | grep "Release-iphoneos" | head -n 1)
+          # Đường dẫn cố định nhờ -derivedDataPath .derived_data
+          APP_PATH=".derived_data/Build/Products/Release-iphoneos/$APP_NAME.app"
           
           echo "Found app at: $APP_PATH"
+          
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: .app bundle not found at $APP_PATH"
+            exit 1
+          fi
           
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
