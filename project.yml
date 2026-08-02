@@ -14,12 +14,9 @@ targets:
     info:
       path: Sources/vtools-ios/Info.plist
     settings:
-      # Cấu hình không yêu cầu Signing Certificate (Dành cho TrollStore / Jailbreak)
       DEVELOPMENT_TEAM: ""
       CODE_SIGNING_REQUIRED: "NO"
       CODE_SIGN_IDENTITY: ""
       CODE_SIGNING_ALLOWED: "NO"
       PRODUCT_BUNDLE_IDENTIFIER: com.vtools.survey
-      # Cấu hình bổ sung giúp giảm thiểu lỗi linker khi biên dịch mã dịch ngược
-      OTHER_LDFLAGS: "$(inherited) -ObjC"
-      EXCLUDED_ARCHS[sdk=iphonesimulator*]: "i386"
+      OTHER_LDFLAGS: "$(inherited) -e _main"
