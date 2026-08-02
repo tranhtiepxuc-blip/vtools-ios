@@ -1,7 +1,6 @@
 import Foundation
 import CoreLocation
 
-// Struct định nghĩa thông tin Tỉnh/Thành phố & Kinh tuyến trục
 struct Province: Identifiable, Hashable {
     let id = UUID()
     let name: String
@@ -10,7 +9,6 @@ struct Province: Identifiable, Hashable {
 }
 
 class VN2000Helper {
-    // Danh sách 63 tỉnh thành kèm Kinh tuyến trục (Múi 3 độ)
     static let provinces: [Province] = [
         Province(name: "VN-2000 / AN GIANG", centralMeridian: 104.75),
         Province(name: "VN-2000 / BÀ RỊA - VŨNG TÀU", centralMeridian: 107.75),
@@ -77,25 +75,37 @@ class VN2000Helper {
         Province(name: "VN-2000 / YÊN BÁI", centralMeridian: 104.75)
     ]
 
-    // Thuật toán Gauss-Krüger chuyển WGS-84 (Kinh độ, Vĩ độ) sang VN-2000 (Tọa độ phẳng X, Y)
+    /// Chuyển đổi từ WGS84 (Lat, Lon) sang VN-2000 Múi 3° (X, Y)
     static func wgs84ToVN2000(lat: Double, lon: Double, cm: Double) -> (x: Double, y: Double) {
         let radLat = lat * .pi / 180.0
         let radLon = lon * .pi / 180.0
         let radCM = cm * .pi / 180.0
         
+        // Tham số Elipsoid WGS84 / VN2000 (WGS84 ellipsoid: a = 6378137.0, f = 1/298.257223563)
         let a = 6378137.0
-        let e2 = 0.00669438
+        let e2 = 0.00669437999014
+        let k0 = 0.9999 // Hệ số tỷ lệ múi 3 độ
+        
         let dLon = radLon - radCM
         
-        let N = a / sqrt(1 - e2 * sin(radLat) * sin(radLat))
-        let T = tan(radLat) * tan(radLat)
-        let C = e2 / (1 - e2) * cos(radLat) * cos(radLat)
-        let A = dLon * cos(radLat)
+        let sinLat = sin(radLat)
+        let cosLat = cos(radLat)
+        let tanLat = tan(radLat)
         
-        let M = a * ((1 - e2/4 - 3*e2*e2/64) * radLat - (3*e2/8 + 3*e2*e2/32) * sin(2*radLat) + (15*e2*e2/256) * sin(4*radLat))
+        let N = a / sqrt(1 - e2 * sinLat * sinLat)
+        let T = tanLat * tanLat
+        let C = (e2 / (1 - e2)) * cosLat * cosLat
+        let A = dLon * cosLat
         
-        let x = M + N * tan(radLat) * (A*A/2 + (5 - T + 9*C + 4*C*C) * pow(A, 4)/24)
-        let y = 500000.0 + N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T) * pow(A, 5)/120)
+        // M: Khoảng cách cung kinh tuyến
+        let M = a * ((1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256) * radLat
+                    - (3*e2/8 + 3*e2*e2/32 + 45*e2*e2*e2/1024) * sin(2*radLat)
+                    + (15*e2*e2/256 + 45*e2*e2*e2/1024) * sin(4*radLat)
+                    - (35*e2*e2*e2/3072) * sin(6*radLat))
+        
+        // Tọa độ phẳng VN-2000
+        let x = k0 * (M + N * tanLat * (A*A/2 + (5 - T + 9*C + 4*C*C) * pow(A, 4)/24 + (61 - 58*T + T*T + 600*C - 330*e2) * pow(A, 6)/720))
+        let y = k0 * N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T + 14*C - 58*T*C) * pow(A, 5)/120) + 500000.0
         
         return (x: x, y: y)
     }
