@@ -75,21 +75,16 @@ class VN2000Helper {
         Province(name: "VN-2000 / YÊN BÁI", centralMeridian: 104.75)
     ]
 
-    // Thuật toán Gauss-Krüger chuẩn hóa kèm 7 tham số chuyển đổi Datum quốc gia Việt Nam
+    /// Chuyển đổi từ WGS84 (Lat, Lon) sang VN-2000 Múi 3° (X, Y)
     static func wgs84ToVN2000(lat: Double, lon: Double, cm: Double) -> (x: Double, y: Double) {
-        // 1. Chuyển đổi tham số dịch chuyển Elipsoid (Datum Shift WGS84 -> VN2000)
-        let dx = -191.904
-        let dy = -39.303
-        let dz = -111.450
-        
         let radLat = lat * .pi / 180.0
         let radLon = lon * .pi / 180.0
         let radCM = cm * .pi / 180.0
         
-        // Bán trục lớn & độ dẹt Elipsoid WGS84/VN2000
+        // Tham số Elipsoid WGS84 / VN2000 (WGS84 ellipsoid: a = 6378137.0, f = 1/298.257223563)
         let a = 6378137.0
         let e2 = 0.00669437999014
-        let k0 = 0.9999 // Hệ số biến dạng chiều dài múi 3 độ
+        let k0 = 0.9999 // Hệ số tỷ lệ múi 3 độ
         
         let dLon = radLon - radCM
         
@@ -108,13 +103,9 @@ class VN2000Helper {
                     + (15*e2*e2/256 + 45*e2*e2*e2/1024) * sin(4*radLat)
                     - (35*e2*e2*e2/3072) * sin(6*radLat))
         
-        // Tính toán tọa độ vuông góc X (North) và Y (East)
-        var x = k0 * (M + N * tanLat * (A*A/2 + (5 - T + 9*C + 4*C*C) * pow(A, 4)/24 + (61 - 58*T + T*T + 600*C - 330*e2) * pow(A, 6)/720))
-        var y = k0 * N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T + 14*C - 58*T*C) * pow(A, 5)/120) + 500000.0
-        
-        // Áp dụng bù sai số dời tâm địa chính (Datum shift compensation)
-        x += (dx * cosLat + dz * sinLat)
-        y += dy
+        // Tọa độ phẳng VN-2000
+        let x = k0 * (M + N * tanLat * (A*A/2 + (5 - T + 9*C + 4*C*C) * pow(A, 4)/24 + (61 - 58*T + T*T + 600*C - 330*e2) * pow(A, 6)/720))
+        let y = k0 * N * (A + (1 - T + C) * pow(A, 3)/6 + (5 - 18*T + T*T + 14*C - 58*T*C) * pow(A, 5)/120) + 500000.0
         
         return (x: x, y: y)
     }
