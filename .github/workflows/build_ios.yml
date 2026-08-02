@@ -33,28 +33,40 @@ jobs:
           plutil -insert NSLocationWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
           plutil -insert NSLocationAlwaysAndWhenInUseUsageDescription -string "vTools cần truy cập vị trí GPS để đo đạc và định vị bản đồ." $PLIST || true
 
-      # 5. Sinh cấu hình Pods & Tắt kiểm tra Code Sign trực tiếp trong file xcconfig
-      - name: Bypass Code Signing in Build Config
+      # 5. Cài đặt CocoaPods (Pods) trực tiếp
+      - name: Install Pods
         run: |
-          flutter build ios --config-only
+          cd ios
+          pod install
+
+      # 6. Sửa cấu hình Xcode để tắt Code Sign hoàn toàn ở cấp độ Workspace
+      - name: Disable Code Signing in Project Files
+        run: |
+          sed -i '' 's/CODE_SIGN_IDENTITY = "iPhone Developer"/CODE_SIGN_IDENTITY = ""/g' ios/Runner.xcodeproj/project.pbxproj || true
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' ios/Runner.xcodeproj/project.pbxproj || true
           echo "CODE_SIGNING_ALLOWED=NO" >> ios/Flutter/Release.xcconfig
           echo "CODE_SIGNING_REQUIRED=NO" >> ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
-          echo "EXPANDED_CODE_SIGN_IDENTITY=" >> ios/Flutter/Release.xcconfig
 
-      # 6. Build ứng dụng không mã hóa chữ ký
-      - name: Build Unsigned iOS App
+      # 7. Biên dịch dự án bằng xcodebuild archive
+      - name: Archive Unsigned App
         run: |
-          flutter build ios --release --no-codesign
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath build/Runner.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
-      # 7. Đóng gói Runner.app thành IPA cho TrollStore
+      # 8. Đóng gói trực tiếp Runner.app bên trong xcarchive thành file IPA
       - name: Package IPA for TrollStore
         run: |
           mkdir Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -r build/Runner.xcarchive/Products/Applications/Runner.app Payload/
           zip -r vtools_survey_custom.ipa Payload
 
-      # 8. Upload file IPA lên GitHub Artifacts
+      # 9. Upload file IPA lên GitHub Artifacts
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
