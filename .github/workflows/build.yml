@@ -18,7 +18,6 @@ jobs:
 
       - name: Build iOS Binary using swift build
         run: |
-          # Build trực tiếp bằng swift build nhắm thẳng tới nền tảng iPhoneOS
           swift build \
             --triple arm64-apple-ios18.5 \
             --sdk $(xcrun --sdk iphoneos --show-sdk-path) \
@@ -29,11 +28,60 @@ jobs:
           APP_NAME="vToolsSurvey"
           BUNDLE_ID="com.vtools.survey"
           
-          # Lấy file binary sau khi build release
           BINARY_PATH=".build/arm64-apple-ios/release/$APP_NAME"
           
           if [ ! -f "$BINARY_PATH" ]; then
-            # Thử tìm tự động nếu đường dẫn thay đổi theo version Swift
+            BINARY_PATH=$(find .build -name "$APP_NAME" -type f | grep "release" | head -n 1)
+          fi
+          
+          echo "Found binary at: $BINARY_PATH"
+          
+          if [ -z "$BINARY_PATH" ] || [ ! -f "$BINARY_PATH" ]; then
+            echo "Error: Binary not found!"
+            exit 1
+          fi
+          
+          mkdir -p Payload/$APP_NAME.app
+          cp "$BINARY_PATH" Payload/$APP_NAME.app/
+          chmod +x Payload/$APP_NAME.app/$APP_NAME
+          
+          cat <<EOF > Payload/$APP_NAME.app/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleIdentifier</key>
+              <string>$BUNDLE_ID</string>
+              <string>$APP_NAME</string>
+              <key>CFBundleExecutable</key>
+              <string>$APP_NAME</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
+              <key>UILaunchScreen</key>
+              <dict/>
+              <key>UISupportedInterfaceOrientations</key>
+              <array>
+                  <string>UIInterfaceOrientationPortrait</string>
+              </array>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Zip to IPA
+        run: |
+          zip -r vToolsSurvey_TrollStore.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vToolsSurvey-TrollStore-IPA
+          path: vToolsSurvey_TrollStore.ipa
             BINARY_PATH=$(find .build -name "$APP_NAME" -type f | grep "release" | head -n 1)
           fi
           
