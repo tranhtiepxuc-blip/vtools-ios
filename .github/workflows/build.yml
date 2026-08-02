@@ -45,130 +45,17 @@ jobs:
           cp "$BINARY_PATH" Payload/$APP_NAME.app/
           chmod +x Payload/$APP_NAME.app/$APP_NAME
           
-          PLIST_PATH="Payload/$APP_NAME.app/Info.plist"
-          echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > "$PLIST_PATH"
-          echo "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">" >> "$PLIST_PATH"
-          echo "<plist version=\"1.0\">" >> "$PLIST_PATH"
-          echo "<dict>" >> "$PLIST_PATH"
-          echo "    <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>" >> "$PLIST_PATH"
-          echo "    <key>CFBundleName</key><string>$APP_NAME</string>" >> "$PLIST_PATH"
-          echo "    <key>CFBundleExecutable</key><string>$APP_NAME</string>" >> "$PLIST_PATH"
-          echo "    <key>CFBundlePackageType</key><string>APPL</string>" >> "$PLIST_PATH"
-          echo "    <key>CFBundleShortVersionString</key><string>1.0</string>" >> "$PLIST_PATH"
-          echo "    <key>CFBundleVersion</key><string>1</string>" >> "$PLIST_PATH"
-          echo "    <key>LSRequiresIPhoneOS</key><true/>" >> "$PLIST_PATH"
-          echo "    <key>UILaunchScreen</key><dict/></key>" >> "$PLIST_PATH"
-          echo "    <key>UISupportedInterfaceOrientations</key>" >> "$PLIST_PATH"
-          echo "    <array><string>UIInterfaceOrientationPortrait</string></array>" >> "$PLIST_PATH"
-          echo "</dict>" >> "$PLIST_PATH"
-          echo "</plist>" >> "$PLIST_PATH"
-
-      - name: Zip to IPA
-        run: |
-          zip -r vToolsSurvey_TrollStore.ipa Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vToolsSurvey-TrollStore-IPA
-          path: vToolsSurvey_TrollStore.ipa
-              <string>1</string>
-              <key>LSRequiresIPhoneOS</key>
-              <true/>
-              <key>UILaunchScreen</key>
-              <dict/>
-              <key>UISupportedInterfaceOrientations</key>
-              <array>
-                  <string>UIInterfaceOrientationPortrait</string>
-              </array>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Zip to IPA
-        run: |
-          zip -r vToolsSurvey_TrollStore.ipa Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vToolsSurvey-TrollStore-IPA
-          path: vToolsSurvey_TrollStore.ipa
-          echo "Found binary at: $BINARY_PATH"
-          
-          if [ -z "$BINARY_PATH" ] || [ ! -f "$BINARY_PATH" ]; then
-            echo "Error: Binary not found!"
-            exit 1
-          fi
-          
-          mkdir -p Payload/$APP_NAME.app
-          cp "$BINARY_PATH" Payload/$APP_NAME.app/
-          chmod +x Payload/$APP_NAME.app/$APP_NAME
-          
-          cat <<EOF > Payload/$APP_NAME.app/Info.plist
+          cat << 'EOF' > Payload/$APP_NAME.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>CFBundleIdentifier</key>
-              <string>$BUNDLE_ID</string>
-              <string>$APP_NAME</string>
-              <key>CFBundleExecutable</key>
-              <string>$APP_NAME</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>CFBundleShortVersionString</key>
-              <string>1.0</string>
-              <key>CFBundleVersion</key>
-              <string>1</string>
-              <key>LSRequiresIPhoneOS</key>
-              <true/>
-              <key>UILaunchScreen</key>
-              <dict/>
-              <key>UISupportedInterfaceOrientations</key>
-              <array>
-                  <string>UIInterfaceOrientationPortrait</string>
-              </array>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Zip to IPA
-        run: |
-          zip -r vToolsSurvey_TrollStore.ipa Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vToolsSurvey-TrollStore-IPA
-          path: vToolsSurvey_TrollStore.ipa
-            BINARY_PATH=$(find .build -name "$APP_NAME" -type f | grep "release" | head -n 1)
-          fi
-          
-          echo "Found binary at: $BINARY_PATH"
-          
-          if [ -z "$BINARY_PATH" ] || [ ! -f "$BINARY_PATH" ]; then
-            echo "Error: Binary not found!"
-            exit 1
-          fi
-          
-          # Tạo cấu trúc .app thủ công
-          mkdir -p Payload/$APP_NAME.app
-          cp "$BINARY_PATH" Payload/$APP_NAME.app/
-          chmod +x Payload/$APP_NAME.app/$APP_NAME
-          
-          # Tạo file Info.plist bắt buộc
-          cat <<EOF > Payload/$APP_NAME.app/Info.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleIdentifier</key>
-              <string>$BUNDLE_ID</string>
+              <string>com.vtools.survey</string>
               <key>CFBundleName</key>
-              <string>$APP_NAME</string>
+              <string>vToolsSurvey</string>
               <key>CFBundleExecutable</key>
-              <string>$APP_NAME</string>
+              <string>vToolsSurvey</string>
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
