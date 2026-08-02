@@ -26,14 +26,12 @@ jobs:
             -scheme vToolsSurvey \
             -sdk iphoneos \
             -configuration Release \
-            derivedDataPath build
+            -derivedDataPath build
 
       - name: Package IPA manually
         run: |
           mkdir -p Payload
-          # Tìm thư mục .app được build ra và copy vào Payload
           cp -r build/Build/Products/Release-iphoneos/*.app Payload/
-          # Nén thành file ipa
           zip -r vToolsSurvey.ipa Payload
           mkdir -p final_output
           mv vToolsSurvey.ipa final_output/
