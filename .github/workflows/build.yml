@@ -15,21 +15,20 @@ jobs:
 
       - name: Build iOS App binary using swift build
         run: |
-          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
-          swift build -c release --triple arm64-apple-ios -Xswiftc -sdk -Xswiftc "$SDK_PATH"
+          export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
+          swift build -c release --triple arm64-apple-ios \
+            -Xswiftc -sdk -Xswiftc "$SDKROOT" \
+            -Xcxx -isysroot -Xcxx "$SDKROOT"
 
       - name: Package into iOS App structure manually
         run: |
           APP_NAME="vToolsSurvey"
           BUNDLE_ID="com.vtools.survey"
           
-          # Tạo cấu trúc thư mục .app chuẩn cho iOS
           mkdir -p Payload/$APP_NAME.app
           
-          # Copy file binary được build từ swift build vào trong thư mục .app
           cp .build/arm64-apple-ios/release/$APP_NAME Payload/$APP_NAME.app/
           
-          # Tạo file Info.plist bắt buộc
           cat <<EOF > Payload/$APP_NAME.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -37,6 +36,7 @@ jobs:
           <dict>
               <key>CFBundleIdentifier</key>
               <string>$BUNDLE_ID</string>
+              <string>$APP_NAME</string>
               <key>CFBundleName</key>
               <string>$APP_NAME</string>
               <key>CFBundleExecutable</key>
