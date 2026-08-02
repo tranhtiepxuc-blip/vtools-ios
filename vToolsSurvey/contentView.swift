@@ -15,7 +15,6 @@ struct ContentView: View {
     @State private var elevation: String = "75.17 m"
     @State private var speed: String = "0.00 m/s"
     
-    // Đã sửa lại đúng cú pháp var cho StateObject
     @StateObject private var locationManager = LocationDataManager()
 
     var body: some View {
@@ -91,10 +90,11 @@ struct ContentView: View {
             .sheet(item: $selectedMenuAction) { actionItem in
                 ActionDetailView(action: actionItem)
             }
-            .onChange(of: locationManager.userLocation) { newLocation in
-                if let loc = newLocation {
-                    northingX = String(format: "%.3f", loc.latitude * 111320.0)
-                    eastingY = String(format: "%.3f", loc.longitude * 110540.0)
+            // Lắng nghe sự thay đổi vĩ độ dưới dạng số Double thông thường (tránh lỗi Equatable)
+            .onChange(of: locationManager.latitudeValue) { newLat in
+                if let lat = newLat, let lon = locationManager.longitudeValue {
+                    northingX = String(format: "%.3f", lat * 111320.0)
+                    eastingY = String(format: "%.3f", lon * 110540.0)
                 }
             }
         }
@@ -105,6 +105,8 @@ struct ContentView: View {
 class LocationDataManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     @Published var userLocation: CLLocationCoordinate2D? = nil
+    @Published var latitudeValue: Double? = nil
+    @Published var longitudeValue: Double? = nil
 
     override init() {
         super.init()
@@ -118,6 +120,8 @@ class LocationDataManager: NSObject, ObservableObject, CLLocationManagerDelegate
         if let location = locations.last {
             DispatchQueue.main.async {
                 self.userLocation = location.coordinate
+                self.latitudeValue = location.coordinate.latitude
+                self.longitudeValue = location.coordinate.longitude
             }
         }
     }
