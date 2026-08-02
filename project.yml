@@ -1,22 +1,15 @@
 name: vToolsSurvey
 options:
   bundleIdPrefix: com.vtools
-  deploymentTarget:
-    iOS: "16.0"
-  developmentLanguage: en
-
 targets:
   vToolsSurvey:
     type: application
     platform: iOS
-    sources: 
-      - path: Sources/vtools-ios
-    info:
-      path: Sources/vtools-ios/Info.plist
+    deploymentTarget: "15.0"
+    sources: [vToolsSurvey]
     settings:
-      DEVELOPMENT_TEAM: ""
-      CODE_SIGNING_REQUIRED: "NO"
-      CODE_SIGN_IDENTITY: ""
-      CODE_SIGNING_ALLOWED: "NO"
+      INFOPLIST_FILE: vToolsSurvey/Info.plist
       PRODUCT_BUNDLE_IDENTIFIER: com.vtools.survey
-      OTHER_LDFLAGS: "$(inherited) -e _main"
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
